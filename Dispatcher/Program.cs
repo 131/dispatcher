@@ -16,16 +16,12 @@ namespace Dispatcher
   {
     static void Main()
     {
-      //ConsoleEx.AttachConsole(Process.GetCurrentProcess().Id);
-
       ConsoleEx.AllocConsole();
-
-
+      ConsoleEx.AttachConsole(Process.GetCurrentProcess().Id);
       string dispatched_cmd = Environment.GetCommandLineArgs()[0];
       var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
       var initargs = argsStart != -1 ? Environment.CommandLine.Substring(argsStart + 1) : "";
 
-      dispatched_cmd = "php";
       string dispatcher = Assembly.GetExecutingAssembly().Location;
       string dispatcher_dir = Path.GetDirectoryName(dispatcher);
       string text = System.IO.File.ReadAllText(dispatcher_dir + "\\dispatch");
@@ -48,6 +44,7 @@ namespace Dispatcher
           break;
         }
       }
+
       if (cmd.Length == 0)
         return;
 
@@ -76,15 +73,8 @@ namespace Dispatcher
         //some likes to be in the path (aka rsync)
       proc.StartInfo.EnvironmentVariables["PATH"] = Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
 
-
-      //proc.StartInfo.StandardErrorEncoding = Encoding.
-
-      //proc.StartInfo.WorkingDirectory = workingDir;
-
-
  
       proc.Start();
-
       ConsoleEx.AttachConsole(proc.Id);
 
 
@@ -98,8 +88,13 @@ namespace Dispatcher
 
       Chat.Start(proc.StandardOutput.BaseStream, outstrm, ChatMethod.CopyTo, "pout > cout");
       Chat.Start(proc.StandardError.BaseStream, outstrm, ChatMethod.CopyTo, "perr > cout");
-      Chat.Start(instrm, proc.StandardInput.BaseStream, ChatMethod.Async, "cin > pin");
+      Chat io = Chat.Start(instrm, proc.StandardInput.BaseStream, ChatMethod.Async, "cin > pin");
 
+      if (ConsoleEx.IsInputRedirected)
+      {
+        while (!io.EOF) continue;
+        io.Close();
+      }
       proc.WaitForExit();
     }
 

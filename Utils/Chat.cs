@@ -18,24 +18,29 @@ namespace Utils
   public class Chat
   {
 
-    Stream mRead;
-    Stream mWrite;
+    private byte[] Buffer { get; set; }
+    private Stream rStream { get; set; }
+    private Stream wStream { get; set; }
+    public bool EOF = false;
+    public string Name = "none";
+
+
     Thread mThread;
     ChatMethod mMethod = ChatMethod.CopyTo;
 
-    string Name { get; set; }
 
-    public Chat(Stream read, Stream write)
+    private Chat(Stream read, Stream write, string name)
     {
-      Name = "meta";
-      mWrite = write; mRead = read;
-
+      this.Buffer = new byte[1024];
+      this.rStream = read;
+      this.wStream = write;
+      this.Name = name;
     }
 
     void RunCopy()
     {
 #if NET4
-      mRead.CopyTo(mWrite);
+      rStream.CopyTo(wStream);
 #else
       RunASync();
 #endif
@@ -43,17 +48,15 @@ namespace Utils
 
     void RunASync()
     {
-      byte[] rbuffer = new byte[1024];
-      mRead.BeginRead(rbuffer, 0, rbuffer.Length, new AsyncCallback(sRead),
-        new StreamState { Buffer = rbuffer, rStream = mRead, wStream = mWrite });
+      rStream.BeginRead(Buffer, 0, Buffer.Length, new AsyncCallback(sRead), this);
     }
 
-    public static void Start(Stream read, Stream write, ChatMethod method, string Name)
+    public static Chat Start(Stream read, Stream write, ChatMethod method, string Name)
     {
-      Chat c = new Chat(read, write);
-      c.Name = Name;
+      Chat c = new Chat(read, write, Name);
       c.mMethod = method;
       c.Start();
+      return c;
     }
 
     public void Start()
@@ -72,12 +75,14 @@ namespace Utils
 
     static void sRead(IAsyncResult async)
     {
-      StreamState state = (StreamState)async.AsyncState;
+      Chat state = (Chat)async.AsyncState;
       int dataLen = state.rStream.EndRead(async);
 
       if (dataLen == 0)
+      {
         state.EOF = true;
-
+        return;
+      }
 
       string str = UTF8Encoding.UTF8.GetString(state.Buffer, 0, dataLen);
       state.wStream.Write(state.Buffer, 0, dataLen);
@@ -85,13 +90,13 @@ namespace Utils
       state.rStream.BeginRead(state.Buffer, 0, state.Buffer.Length, new AsyncCallback(sRead), state);
     }
 
+
+    internal void Close()
+    {
+      mThread.Abort();
+      rStream.Close();
+      wStream.Close();
+    }
   }
 
-  public class StreamState
-  {
-    public byte[] Buffer { get; set; }
-    public Stream rStream { get; set; }
-    public Stream wStream { get; set; }
-    public bool EOF = false;
-  }
 }
