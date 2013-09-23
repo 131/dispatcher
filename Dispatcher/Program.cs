@@ -80,6 +80,7 @@ namespace Dispatcher
 
       Stream instrm = Console.OpenStandardInput();
       Stream outstrm = Console.OpenStandardOutput();
+      Stream errstrm = Console.OpenStandardError();
 
 
       var job = new Job();
@@ -87,15 +88,18 @@ namespace Dispatcher
       job.AddProcess(proc.Handle);
 
       Chat.Start(proc.StandardOutput.BaseStream, outstrm, ChatMethod.CopyTo, "pout > cout");
-      Chat.Start(proc.StandardError.BaseStream, outstrm, ChatMethod.CopyTo, "perr > cout");
+      Chat.Start(proc.StandardError.BaseStream, errstrm, ChatMethod.CopyTo, "perr > cout");
       Chat io = Chat.Start(instrm, proc.StandardInput.BaseStream, ChatMethod.Async, "cin > pin");
 
       if (ConsoleEx.IsInputRedirected)
       {
-        while (!io.EOF) continue;
-        io.Close();
+          while (!io.EOF) continue;
+          io.Close();
       }
+ 
       proc.WaitForExit();
+
+      Environment.Exit(proc.ExitCode);
     }
 
 
