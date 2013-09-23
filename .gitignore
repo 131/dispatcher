@@ -1,0 +1,10 @@
+*.user
+*.suo
+/Dispatcher/bin
+/Dispatcher/obj
+/Utils/bin
+/Utils/obj
+/echo/bin
+/echo/obj
+/bin
+/obj
