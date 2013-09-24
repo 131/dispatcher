@@ -18,7 +18,8 @@ namespace Dispatcher
     {
       ConsoleEx.AllocConsole();
       ConsoleEx.AttachConsole(Process.GetCurrentProcess().Id);
-      string dispatched_cmd = Environment.GetCommandLineArgs()[0];
+      string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+
       var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
       var initargs = argsStart != -1 ? Environment.CommandLine.Substring(argsStart + 1) : "";
 
@@ -49,11 +50,16 @@ namespace Dispatcher
         return;
 
       string exepath = Path.GetFullPath(Path.Combine(dispatcher_dir, cmd[1]));
+      string pargs = (cmd.Length > 2 ? cmd[2] + " " : "") + initargs;
+      RunProcess(exepath, pargs);
+    }
+
+    private static void RunProcess(string exepath, string pargs)
+    {
+
       string exeDir = Path.GetDirectoryName(exepath);
       if (!File.Exists(exepath))
         return;
-
-      string pargs = (cmd.Length > 2 ? cmd[2] + " " : "") + initargs;
 
       Process proc = new Process();
       proc.StartInfo.FileName = exepath;
@@ -70,10 +76,10 @@ namespace Dispatcher
       proc.StartInfo.RedirectStandardInput = true;
       proc.StartInfo.RedirectStandardError = true;
 
-        //some likes to be in the path (aka rsync)
+      //some likes to be in the path (aka rsync)
       proc.StartInfo.EnvironmentVariables["PATH"] = Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
 
- 
+
       proc.Start();
       ConsoleEx.AttachConsole(proc.Id);
 
@@ -87,18 +93,27 @@ namespace Dispatcher
       job.AddProcess(Process.GetCurrentProcess().Handle);
       job.AddProcess(proc.Handle);
 
-      Chat.Start(proc.StandardOutput.BaseStream, outstrm, ChatMethod.CopyTo, "pout > cout");
-      Chat.Start(proc.StandardError.BaseStream, errstrm, ChatMethod.CopyTo, "perr > cout");
+      Chat error = Chat.Start(proc.StandardOutput.BaseStream, outstrm, ChatMethod.Sync, "pout > cout");
+      Chat output  = Chat.Start(proc.StandardError.BaseStream, errstrm, ChatMethod.Sync, "perr > cout");
       Chat io = Chat.Start(instrm, proc.StandardInput.BaseStream, ChatMethod.Async, "cin > pin");
 
-      if (ConsoleEx.IsInputRedirected)
+
+      if (ConsoleEx.IsInputRedirected && ConsoleEx.IsInputDisk)
       {
-          while (!io.EOF) continue;
-          io.Close();
+        while (!io.EOF) ;
+        io.Close();
       }
- 
+
+
       proc.WaitForExit();
 
+      error.End();
+      output.End();
+      io.End();
+
+      while (error.Alive || output.Alive) ;
+
+     
       Environment.Exit(proc.ExitCode);
     }
 

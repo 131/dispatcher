@@ -16,6 +16,10 @@ namespace Utils
     {
       get { return FileType.Char != GetFileType(GetStdHandle(StdHandle.Stdin)); }
     }
+    public static bool IsInputDisk
+    {
+      get { return FileType.Disk == GetFileType(GetStdHandle(StdHandle.Stdin)); }
+    }
     public static bool IsErrorRedirected
     {
       get { return FileType.Char != GetFileType(GetStdHandle(StdHandle.Stderr)); }

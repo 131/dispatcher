@@ -13,6 +13,7 @@ namespace Utils
   {
     CopyTo,
     Async,
+    Sync,
   }
 
   public class Chat
@@ -23,7 +24,7 @@ namespace Utils
     private Stream wStream { get; set; }
     public bool EOF = false;
     public string Name = "none";
-
+    public bool Alive { get { return mThread.IsAlive; } }
 
     Thread mThread;
     ChatMethod mMethod = ChatMethod.CopyTo;
@@ -51,6 +52,24 @@ namespace Utils
       rStream.BeginRead(Buffer, 0, Buffer.Length, new AsyncCallback(sRead), this);
     }
 
+
+    void RunSync()
+    {
+      do
+      {
+        int read = rStream.Read(Buffer, 0, Buffer.Length);
+        if (read != 0)
+        {
+          wStream.Write(Buffer, 0, read);
+          wStream.Flush();
+        }
+        else if (mend) break;
+        //if ((new StreamReader(rStream)).EndOfStream) break;
+      } while (rStream.CanRead);
+
+      this.Close();
+    }
+
     public static Chat Start(Stream read, Stream write, ChatMethod method, string Name)
     {
       Chat c = new Chat(read, write, Name);
@@ -68,8 +87,11 @@ namespace Utils
 
         if (mMethod == ChatMethod.CopyTo)
           mThread = new Thread(RunCopy);
-      }
 
+        if (mMethod == ChatMethod.Sync)
+          mThread = new Thread(RunSync);
+      }
+      mThread.Name = Name;
       mThread.Start();
     }
 
@@ -96,6 +118,12 @@ namespace Utils
       mThread.Abort();
       rStream.Close();
       wStream.Close();
+    }
+
+    private bool mend = false;
+    internal void End()
+    {
+      mend = true;
     }
   }
 
