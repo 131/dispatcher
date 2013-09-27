@@ -110,25 +110,24 @@ void main ()
 
 
   // Launch the thread that gets the input and sends it to the child.
-  hThread = CreateThread(NULL,0,GetAndSendInputThread,
-                          (LPVOID)hInputWrite,0,&ThreadId);
-  if (hThread == NULL) DisplayError("CreateThread");
+  //hThread = CreateThread(NULL,0,GetAndSendInputThread, (LPVOID)hInputWrite,0,&ThreadId);
+  //if (hThread == NULL) DisplayError("CreateThread");
 
 
   // Read the child's output.
-  ReadAndHandleOutput(hOutputRead);
+  //ReadAndHandleOutput(hOutputRead);
   // Redirection is complete
 
 
   // Force the read on the input to return by closing the stdin handle.
-  if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
+  //if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
 
 
   // Tell the thread to exit and wait for thread to die.
-  bRunThread = FALSE;
+  //bRunThread = FALSE;
 
-  if (WaitForSingleObject(hThread,INFINITE) == WAIT_FAILED)
-     DisplayError("WaitForSingleObject");
+  //if (WaitForSingleObject(hThread,INFINITE) == WAIT_FAILED)
+  //   DisplayError("WaitForSingleObject");
 
   if (!CloseHandle(hOutputRead)) DisplayError("CloseHandle");
   if (!CloseHandle(hInputWrite)) DisplayError("CloseHandle");
@@ -150,9 +149,9 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
   ZeroMemory(&si,sizeof(STARTUPINFO));
   si.cb = sizeof(STARTUPINFO);
   si.dwFlags = STARTF_USESTDHANDLES;
-  si.hStdOutput = hChildStdOut;
-  si.hStdInput  = hChildStdIn;
-  si.hStdError  = hChildStdErr;
+  si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+  si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+  si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
   // Use this if you want to hide the child:
   //     si.wShowWindow = SW_HIDE;
   // Note that dwFlags must include STARTF_USESHOWWINDOW if you want to
@@ -164,7 +163,7 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
   // Child.exe). Make sure Child.exe is in the same directory as
   // redirect.c launch redirect from a command line to prevent location
   // confusion.
-  if (!CreateProcess(NULL,"cmd.exe /c \"D:\\apps\\bundle\\msys\\bin\\git.exe  clone  http://git.ivsdev.net/activisu-mobile/prevencia-platform.git 9\"",NULL,NULL,TRUE,
+  if (!CreateProcess(NULL,"D:\\apps\\bundle\\msys\\bin\\git.exe  clone  http://git.ivsdev.net/activisu-mobile/prevencia-platform.git 91",NULL,NULL,TRUE,
   //if (!CreateProcess(NULL,"child.exe",NULL,NULL,TRUE,
                      STARTF_USESTDHANDLES,NULL,NULL,&si,&pi))
      DisplayError("CreateProcess");
@@ -173,6 +172,7 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
   // Set global child process handle to cause threads to exit.
   hChildProcess = pi.hProcess;
 
+WaitForSingleObject( hChildProcess, INFINITE );
 
   // Close any unnecessary handles.
   if (!CloseHandle(pi.hThread)) DisplayError("CloseHandle");
