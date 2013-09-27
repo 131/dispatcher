@@ -1,0 +1,110 @@
+usage in  https://github.com/php/php-src/blob/PHP-5.4/ext/standard/exec.c
+(fw TSRM/tsrm_virtual_cwd.c)
+(fw /TSRM/tsrm_win32.c)
+
+	fp = VCWD_POPEN(cmd, "rb");
+
+
+
+TSRM_API FILE *popen_ex(const char *command, const char *type, const char *cwd, char *env TSRMLS_DC)
+{
+FILE *stream = NULL;
+int fno, type_len = strlen(type), read, mode;
+STARTUPINFO startup;
+PROCESS_INFORMATION process;
+SECURITY_ATTRIBUTES security;
+HANDLE in, out;
+DWORD dwCreateFlags = 0;
+BOOL res;
+process_pair *proc;
+char *cmd;
+int i;
+char *ptype = (char *)type;
+HANDLE thread_token = NULL;
+HANDLE token_user = NULL;
+BOOL asuser = TRUE;
+
+if (!type) {
+return NULL;
+}
+
+/*The following two checks can be removed once we drop XP support */
+type_len = strlen(type);
+if (type_len <1 || type_len > 2) {
+return NULL;
+}
+
+for (i=0; i < type_len; i++) {
+if (!(*ptype == 'r' || *ptype == 'w' || *ptype == 'b' || *ptype == 't')) {
+return NULL;
+}
+ptype++;
+}
+
+security.nLength	= sizeof(SECURITY_ATTRIBUTES);
+security.bInheritHandle	= TRUE;
+security.lpSecurityDescriptor	= NULL;
+
+if (!type_len || !CreatePipe(&in, &out, &security, 2048L)) {
+return NULL;
+}
+
+memset(&startup, 0, sizeof(STARTUPINFO));
+memset(&process, 0, sizeof(PROCESS_INFORMATION));
+
+startup.cb	= sizeof(STARTUPINFO);
+startup.dwFlags	= STARTF_USESTDHANDLES;
+startup.hStdError	= GetStdHandle(STD_ERROR_HANDLE);
+
+read = (type[0] == 'r') ? TRUE : FALSE;
+mode = ((type_len == 2) && (type[1] == 'b')) ? O_BINARY : O_TEXT;
+
+if (read) {
+in = dupHandle(in, FALSE);
+startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+startup.hStdOutput = out;
+} else {
+out = dupHandle(out, FALSE);
+startup.hStdInput = in;
+startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+}
+
+dwCreateFlags = NORMAL_PRIORITY_CLASS;
+if (strcmp(sapi_module.name, "cli") != 0) {
+dwCreateFlags |= CREATE_NO_WINDOW;
+}
+
+cmd = (char*)malloc(strlen(command)+strlen(TWG(comspec))+sizeof(" /c ")+2);
+if (!cmd) {
+return NULL;
+}
+
+sprintf(cmd, "%s /c \"%s\"", TWG(comspec), command);
+if (asuser) {
+res = CreateProcessAsUser(token_user, NULL, cmd, &security, &security, security.bInheritHandle, dwCreateFlags, env, cwd, &startup, &process);
+CloseHandle(token_user);
+} else {
+res = CreateProcess(NULL, cmd, &security, &security, security.bInheritHandle, dwCreateFlags, env, cwd, &startup, &process);
+}
+free(cmd);
+
+if (!res) {
+return NULL;
+}
+
+CloseHandle(process.hThread);
+proc = process_get(NULL TSRMLS_CC);
+
+if (read) {
+fno = _open_osfhandle((tsrm_intptr_t)in, _O_RDONLY | mode);
+CloseHandle(out);
+} else {
+fno = _open_osfhandle((tsrm_intptr_t)out, _O_WRONLY | mode);
+CloseHandle(in);
+}
+
+stream = _fdopen(fno, type);
+proc->prochnd = process.hProcess;
+proc->stream = stream;
+return stream;
+}
