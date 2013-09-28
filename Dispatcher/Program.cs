@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.IO;
 using System.Reflection;
@@ -16,12 +15,67 @@ namespace Dispatcher
   {
     static void Main()
     {
-      ConsoleEx.AllocConsole();
-      ConsoleEx.AttachConsole(-1);
+      string exePath;
+      string args;
+
+      if (!ExtractCommandLine(out exePath, out args))
+        Environment.Exit(1);
+
+      string exeDir = Path.GetDirectoryName(exePath);
+
+      Environment.SetEnvironmentVariable("PATH",  Environment.GetEnvironmentVariable("PATH") + ";" + exeDir);
+      RunC(exePath, args);
+    }
+
+
+
+    private static void RunC(string exePath, string args)
+    {
+      var pInfo = new PROCESS_INFORMATION();
+      var sInfoEx = new STARTUPINFOEX();
+      sInfoEx.StartupInfo = new STARTUPINFO();
+
+
+      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
+      IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+      IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+      IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
+
+      sInfoEx.StartupInfo.hStdInput = iStdIn;
+      sInfoEx.StartupInfo.hStdOutput = iStdOut;
+      sInfoEx.StartupInfo.hStdError = iStdErr;
+
+      Kernel32.CreateProcess(null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true, Kernel32.STARTF_USESTDHANDLES, IntPtr.Zero, null, ref sInfoEx, out pInfo);
+
+      Kernel32.CloseHandle(pInfo.hThread);
+
+      //make sure dispatcher kill its child process when killed
+      var job = new Job();
+      job.AddProcess(Process.GetCurrentProcess().Handle);
+      job.AddProcess(pInfo.hProcess);
+
+      Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+
+      uint exitCode;
+      Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
+
+      //clean up
+      Kernel32.CloseHandle(pInfo.hProcess);
+      Kernel32.CloseHandle(iStdOut);
+      Kernel32.CloseHandle(iStdErr);
+      Kernel32.CloseHandle(iStdIn);
+
+      Environment.Exit((int) exitCode);
+    }
+
+
+    private static bool ExtractCommandLine(out string exePath, out string args){
+      args = exePath = String.Empty;
+
       string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
       var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
-      var initargs = argsStart != -1 ? Environment.CommandLine.Substring(argsStart + 1) : "";
+      args = argsStart != -1 ? Environment.CommandLine.Substring(argsStart + 1) : "";
 
       string dispatcher = Assembly.GetExecutingAssembly().Location;
       string dispatcher_dir = Path.GetDirectoryName(dispatcher);
@@ -49,55 +103,12 @@ namespace Dispatcher
       if (cmd.Length == 0)
       {
         Console.Error.WriteLine("Cannot resolve cmd");
-        return;
+        return false;
       }
 
-      string exepath = Path.GetFullPath(Path.Combine(dispatcher_dir, cmd[1]));
-      string exeDir = Path.GetDirectoryName(exepath);
-      Environment.SetEnvironmentVariable("PATH",  Environment.GetEnvironmentVariable("PATH") + ";" + exeDir);
-
-      string pargs = (cmd.Length > 2 ? cmd[2] + " " : "") + initargs;
-      //RunProcess(exepath, pargs);
-      //RunCmd(exepath, pargs);
-      RunC(exepath, pargs);
-    }
-
-    private static void RunC(string exePath, string args)
-    {
-      var pInfo = new PROCESS_INFORMATION();
-      var sInfoEx = new STARTUPINFOEX();
-      sInfoEx.StartupInfo = new STARTUPINFO();
-
-
-      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
-      IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
-      IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
-      IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
-
-      sInfoEx.StartupInfo.hStdInput = iStdIn;
-      sInfoEx.StartupInfo.hStdOutput = iStdOut;
-      sInfoEx.StartupInfo.hStdError = iStdErr;
-
-      Kernel32.CreateProcess(null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true, Kernel32.STARTF_USESTDHANDLES, IntPtr.Zero, null, ref sInfoEx, out pInfo);
-
-      Kernel32.CloseHandle(pInfo.hThread);
-
-      var job = new Job();
-      job.AddProcess(Process.GetCurrentProcess().Handle);
-      job.AddProcess(pInfo.hProcess);
-
-      Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
-
-      uint exitCode;
-      Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
-
-
-      Kernel32.CloseHandle(pInfo.hProcess);
-      Kernel32.CloseHandle(iStdOut);
-      Kernel32.CloseHandle(iStdErr);
-      Kernel32.CloseHandle(iStdIn);
-
-      Environment.Exit((int) exitCode);
+      args = (cmd.Length > 2 ? cmd[2] + " " : "") + args;
+      exePath = Path.GetFullPath(Path.Combine(dispatcher_dir, cmd[1]));
+      return true;
     }
 
     public static string Replace(string str, Dictionary<string, string> dict)
