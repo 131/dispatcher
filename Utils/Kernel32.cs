@@ -111,6 +111,10 @@ namespace Utils
   {
     public const UInt32 INFINITE = 0xFFFFFFFF;
     public const int STARTF_USESTDHANDLES = 0x00000100;
+    public const int CREATE_NO_WINDOW = 0x08000000;
+
+
+
     public const int STD_OUTPUT_HANDLE = -11;
     public const int STD_INPUT_HANDLE = -10;
     public const int STD_ERROR_HANDLE = -12;

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.Net.Sockets;
 using Utils;
+using System.Text.RegularExpressions;
 
 namespace Dispatcher
 {
@@ -18,12 +19,16 @@ namespace Dispatcher
       string exePath;
       string args;
 
-      if (!ExtractCommandLine(out exePath, out args))
+      Dictionary<string, string> envs = new Dictionary<string, string>();
+
+      if (!ExtractCommandLine(out exePath, out args, envs))
         Environment.Exit(1);
 
       string exeDir = Path.GetDirectoryName(exePath);
+      envs["Path"] =  Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
+      foreach(KeyValuePair<string, string> env in envs)
+        Environment.SetEnvironmentVariable(env.Key,  env.Value);
 
-      Environment.SetEnvironmentVariable("PATH",  Environment.GetEnvironmentVariable("PATH") + ";" + exeDir);
       RunC(exePath, args);
     }
 
@@ -45,7 +50,10 @@ namespace Dispatcher
       sInfoEx.StartupInfo.hStdOutput = iStdOut;
       sInfoEx.StartupInfo.hStdError = iStdErr;
 
-      Kernel32.CreateProcess(null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true, Kernel32.STARTF_USESTDHANDLES, IntPtr.Zero, null, ref sInfoEx, out pInfo);
+      Kernel32.CreateProcess(
+          null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
+          Kernel32.STARTF_USESTDHANDLES | Kernel32.CREATE_NO_WINDOW,
+          IntPtr.Zero, null, ref sInfoEx, out pInfo);
 
       Kernel32.CloseHandle(pInfo.hThread);
 
@@ -69,7 +77,8 @@ namespace Dispatcher
     }
 
 
-    private static bool ExtractCommandLine(out string exePath, out string args){
+    private static bool ExtractCommandLine(out string exePath, out string args, Dictionary<string, string> envs)
+    {
       args = exePath = String.Empty;
 
       string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
@@ -87,15 +96,23 @@ namespace Dispatcher
         {"%dwd%", dispatcher_dir},
       };
 
-      foreach (var rawline in text.Split(new string[] { "\r\n" }, StringSplitOptions.None))
+      string[] lines = text.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+      for(var i=0;i<lines.Length; i++)
       {
-        var line = Replace(rawline, replaces);
+        var line = Replace(lines[i], replaces);
         var entry = line.Split(new string[] { " " }, 3, StringSplitOptions.None);
 
         if (entry.Length < 2) continue;
         if (dispatched_cmd == entry[0])
         {
           cmd = entry;
+          for (int j = i+1; j < lines.Length; j++)
+          {
+            Match e = Regex.Match(lines[j], @"^\s*([a-z_0-9-]+)\s*=\s*(.+)?", RegexOptions.IgnoreCase);
+            if(!e.Success)break;
+            envs[e.Groups[1].Value] = e.Groups[2].Value;
+          }
+
           break;
         }
       }
