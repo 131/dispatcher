@@ -30,6 +30,7 @@ namespace Dispatcher
         Environment.SetEnvironmentVariable(env.Key,  env.Value);
 
       RunC(exePath, args);
+      //RunProcess(exePath, args);
     }
 
 
@@ -41,7 +42,7 @@ namespace Dispatcher
       sInfoEx.StartupInfo = new STARTUPINFO();
 
 
-      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
+      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES | Kernel32.CREATE_NO_WINDOW;
       IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
       IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
       IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
@@ -52,7 +53,8 @@ namespace Dispatcher
 
       Kernel32.CreateProcess(
           null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
-          Kernel32.STARTF_USESTDHANDLES | Kernel32.CREATE_NO_WINDOW,
+          //(uint) 0,
+          Kernel32.STARTF_USESTDHANDLES ,
           IntPtr.Zero, null, ref sInfoEx, out pInfo);
 
       Kernel32.CloseHandle(pInfo.hThread);
@@ -139,8 +141,8 @@ namespace Dispatcher
      * Fails as OpenStandardInput might be a "char" (console)
      * And RedirectStandardInput force Process.StandartInput as "pipe"
      * Include chat.cs to get this to work
-     * *
-/*    private static void RunProcess(string exepath, string pargs)
+     * 
+    private static void RunProcess(string exepath, string pargs)
     {
 
       string exeDir = Path.GetDirectoryName(exepath);
@@ -213,8 +215,8 @@ namespace Dispatcher
       Chat.Start(stream, outstrm, ChatMethod.CopyTo, "perr > cout");
       Chat.Start(instrm, stream, ChatMethod.CopyTo,  "cin > pin");
     }
-*/
 
+    */
 
   }
 
