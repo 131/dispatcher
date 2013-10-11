@@ -112,8 +112,9 @@ namespace Utils
     public const UInt32 INFINITE = 0xFFFFFFFF;
     public const int STARTF_USESTDHANDLES = 0x00000100;
     public const int CREATE_NO_WINDOW = 0x08000000;
-
-
+    public const int DETACHED_PROCESS = 0x00000008;
+    public const int SW_HIDE = 0x0000000;
+    public const int STARTF_USESHOWWINDOW  = 0x00000001;
 
     public const int STD_OUTPUT_HANDLE = -11;
     public const int STD_INPUT_HANDLE = -10;

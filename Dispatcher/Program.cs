@@ -42,19 +42,19 @@ namespace Dispatcher
       sInfoEx.StartupInfo = new STARTUPINFO();
 
 
-      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES | Kernel32.CREATE_NO_WINDOW;
+      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES | Kernel32.STARTF_USESHOWWINDOW;
       IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
       IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
       IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
 
+      sInfoEx.StartupInfo.wShowWindow = Kernel32.SW_HIDE;
       sInfoEx.StartupInfo.hStdInput = iStdIn;
       sInfoEx.StartupInfo.hStdOutput = iStdOut;
       sInfoEx.StartupInfo.hStdError = iStdErr;
 
       Kernel32.CreateProcess(
           null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
-          //(uint) 0,
-          Kernel32.STARTF_USESTDHANDLES ,
+          Kernel32.STARTF_USESTDHANDLES,
           IntPtr.Zero, null, ref sInfoEx, out pInfo);
 
       Kernel32.CloseHandle(pInfo.hThread);
