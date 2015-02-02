@@ -8,3 +8,7 @@
 /echo/obj
 /bin
 /obj
+
+/*.exe
+/*.exe
+/Dispatcher/bin/Release/dispatcher.exe

@@ -14,14 +14,18 @@ namespace Dispatcher
 {
   class Program
   {
+    private static string exePath;
+    private static string args;
+    private static bool use_showwindow;
+
+    const string FLAG_DISPATCHER_GUI = "DISPATCHER_GUI"; //toggle !use_showwindow
+
     static void Main()
     {
-      string exePath;
-      string args;
 
       Dictionary<string, string> envs = new Dictionary<string, string>();
 
-      if (!ExtractCommandLine(out exePath, out args, envs))
+      if (!ExtractCommandLine(out exePath, out args, out use_showwindow, envs))
         Environment.Exit(1);
 
       string exeDir = Path.GetDirectoryName(exePath);
@@ -29,20 +33,23 @@ namespace Dispatcher
       foreach(KeyValuePair<string, string> env in envs)
         Environment.SetEnvironmentVariable(env.Key,  env.Value);
 
-      RunC(exePath, args);
+      RunC();
       //RunProcess(exePath, args);
     }
 
 
 
-    private static void RunC(string exePath, string args)
+    private static void RunC()
     {
       var pInfo = new PROCESS_INFORMATION();
       var sInfoEx = new STARTUPINFOEX();
       sInfoEx.StartupInfo = new STARTUPINFO();
 
+      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
 
-      sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES | Kernel32.STARTF_USESHOWWINDOW;
+      if (use_showwindow)
+        sInfoEx.StartupInfo.dwFlags |= Kernel32.STARTF_USESHOWWINDOW;
+
       IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
       IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
       IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
@@ -79,9 +86,10 @@ namespace Dispatcher
     }
 
 
-    private static bool ExtractCommandLine(out string exePath, out string args, Dictionary<string, string> envs)
+    private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, Dictionary<string, string> envs)
     {
       args = exePath = String.Empty;
+      use_showwindow = true;
 
       string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
@@ -112,7 +120,10 @@ namespace Dispatcher
           {
             Match e = Regex.Match(lines[j], @"^\s*([a-z_0-9-]+)\s*=\s*(.+)?", RegexOptions.IgnoreCase);
             if(!e.Success)break;
-            envs[e.Groups[1].Value] = e.Groups[2].Value;
+
+            if(e.Groups[1].Value == FLAG_DISPATCHER_GUI)
+              use_showwindow = false;
+            else envs[e.Groups[1].Value] = e.Groups[2].Value;
           }
 
           break;
@@ -137,97 +148,6 @@ namespace Dispatcher
       return str;
     }
 
-    /**
-     * Fails as OpenStandardInput might be a "char" (console)
-     * And RedirectStandardInput force Process.StandartInput as "pipe"
-     * Include chat.cs to get this to work
-     * 
-    private static void RunProcess(string exepath, string pargs)
-    {
-
-      string exeDir = Path.GetDirectoryName(exepath);
-      if (!File.Exists(exepath))
-        return;
-
-      Process proc = new Process();
-      proc.StartInfo.FileName = exepath;
-
-      proc.StartInfo.UseShellExecute = false;
-
-      proc.StartInfo.CreateNoWindow = true;
-
-      proc.StartInfo.Arguments = pargs;
-      proc.StartInfo.RedirectStandardOutput = true;
-      proc.StartInfo.RedirectStandardInput = true;
-      proc.StartInfo.RedirectStandardError = true;
-
-      //some likes to be in the path (aka rsync)
-      proc.StartInfo.EnvironmentVariables["PATH"] = Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
-
-
-      proc.Start();
-      ConsoleEx.AttachConsole(proc.Id);
-
-
-      Stream instrm = Console.OpenStandardInput();
-      Stream outstrm = Console.OpenStandardOutput();
-      Stream errstrm = Console.OpenStandardError();
-
-
-      var job = new Job();
-      job.AddProcess(Process.GetCurrentProcess().Handle);
-      job.AddProcess(proc.Handle);
-
-      Chat error = Chat.Start(proc.StandardOutput.BaseStream, outstrm, ChatMethod.Sync, "pout > cout");
-      Chat output = Chat.Start(proc.StandardError.BaseStream, errstrm, ChatMethod.Sync, "perr > cout");
-      Chat io = Chat.Start(instrm, proc.StandardInput.BaseStream, ChatMethod.Async, "cin > pin");
-
-
-      if (ConsoleEx.IsInputRedirected && ConsoleEx.IsInputDisk)
-      {
-        while (!io.EOF) ;
-        io.Close();
-      }
-
-
-      proc.WaitForExit();
-
-      error.End();
-      output.End();
-      io.End();
-
-      while (error.Alive || output.Alive) ;
-
-
-      Environment.Exit(proc.ExitCode);
-    }
-
-    static void Main_tcp()
-    {
-
-      TcpClient client = new TcpClient("127.0.0.1", 8000);
-      NetworkStream stream = client.GetStream();
-
-      Stream instrm = Console.OpenStandardInput();
-      Stream outstrm = Console.OpenStandardOutput();
-
-
-      Chat.Start(stream, outstrm, ChatMethod.CopyTo, "perr > cout");
-      Chat.Start(instrm, stream, ChatMethod.CopyTo,  "cin > pin");
-    }
-
-    */
-
   }
-
-
-
-
-
-
-
-
-
-
 
 }
