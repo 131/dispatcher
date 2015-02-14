@@ -89,7 +89,12 @@ namespace Dispatcher
     private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, Dictionary<string, string> envs)
     {
       args = exePath = String.Empty;
+#if DISPACHER_WIN
+      use_showwindow = false;
+#else
       use_showwindow = true;
+#endif
+
 
       string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
