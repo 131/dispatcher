@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
-using System.Threading;
-using System.Runtime.InteropServices;
-using System.Net.Sockets;
-using Utils;
 using System.Text.RegularExpressions;
+using Utils;
 
 namespace Dispatcher
 {
@@ -33,14 +29,7 @@ namespace Dispatcher
       foreach(KeyValuePair<string, string> env in envs)
         Environment.SetEnvironmentVariable(env.Key,  env.Value);
 
-      RunC();
-      //RunProcess(exePath, args);
-    }
 
-
-
-    private static void RunC()
-    {
       var pInfo = new PROCESS_INFORMATION();
       var sInfoEx = new STARTUPINFOEX();
       sInfoEx.StartupInfo = new STARTUPINFO();
@@ -128,7 +117,7 @@ namespace Dispatcher
 
             if(e.Groups[1].Value == FLAG_DISPATCHER_GUI)
               use_showwindow = false;
-            else envs[e.Groups[1].Value] = e.Groups[2].Value;
+            else envs[e.Groups[1].Value] = Replace(e.Groups[2].Value, replaces);
           }
 
           break;
