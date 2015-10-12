@@ -8,13 +8,30 @@ del %win% %exe%
 %csc%  %args% /out:%exe%  /target:exe %files%
 
 
-@set bundle_bin=D:\apps\bundle\bin
+@set bundle_bin=bin
 
-copy %exe% %bundle_bin%\php.exe
-copy %exe% %bundle_bin%\svn.exe
+copy %exe% %bundle_bin%\7z.exe
+copy %exe% %bundle_bin%\bash.exe
+copy %exe% %bundle_bin%\chmod.exe
+copy %exe% %bundle_bin%\ffmpeg.exe
+copy %exe% %bundle_bin%\ffprobe.exe
 copy %exe% %bundle_bin%\git.exe
-copy %exe% %bundle_bin%\svn18.exe
-copy %exe% %bundle_bin%\rsync.exe
+copy %exe% %bundle_bin%\grep.exe
+copy %exe% %bundle_bin%\gzip.exe
+copy %exe% %bundle_bin%\ls.exe
+copy %exe% %bundle_bin%\makensis.exe
+copy %exe% %bundle_bin%\mv.exe
 copy %exe% %bundle_bin%\node.exe
 copy %win% %bundle_bin%\nw.exe
-copy %win% %bundle_bin%\putty.exe
+copy %exe% %bundle_bin%\pdftopng.exe
+copy %exe% %bundle_bin%\pdftotext.exe
+copy %exe% %bundle_bin%\php.exe
+copy %exe% %bundle_bin%\python.exe
+copy %exe% %bundle_bin%\rsync.exe
+copy %exe% %bundle_bin%\sed.exe
+copy %exe% %bundle_bin%\sh.exe
+copy %exe% %bundle_bin%\ssh-keygen.exe
+copy %exe% %bundle_bin%\svn.exe
+copy %exe% %bundle_bin%\svn18.exe
+copy %exe% %bundle_bin%\tar.exe
+copy %exe% %bundle_bin%\tee.exe
