@@ -100,7 +100,7 @@ namespace Dispatcher
         {"%dwd%", dispatcher_dir},
       };
 
-      string[] lines = text.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+      string[] lines = text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
       for(var i=0;i<lines.Length; i++)
       {
         var line = Replace(lines[i], replaces);
