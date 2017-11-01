@@ -53,7 +53,7 @@ C:\dispatchedbin\php.exe.config => C:\Program Files x86\php\bin\php.exe
 * therefore [dispatcher.exe](https://github.com/131/dispatcher) is available in 2 architectures : x32 & x64
 * 
 ## Forced args
-You can force additional args (injected before args what might have been send toward `[dispatched].exe`
+You can force additional args (injected before args that might have been sent toward `[dispatched].exe`
 ``` (node.exe.config)
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
