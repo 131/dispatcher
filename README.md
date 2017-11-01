@@ -16,6 +16,8 @@ Configuration file syntax is :
 </configuration>
 ```
 
+# Download
+Find all download in [github releases](https://github.com/131/dispatcher/releases/tag/v1.0.0)
 
 # Motivation  - sample usage
 I use a lot of command line tool in windows (interpreters, encoders, git & related tools)
