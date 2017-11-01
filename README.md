@@ -48,10 +48,9 @@ C:\dispatchedbin\php.exe.config => C:\Program Files x86\php\bin\php.exe
 # Advanced usage, few things to understand
 * There is a fundamental difference in console applications  & desktop applications for windows
 * therefore [dispatcher](https://github.com/131/dispatcher) comes in 2 flavors - respectively dispatcher_cmd.exe &  dispatcher_win.exe.
-
 * You cannot spawn x64 executables located in c:\windows\system32 from a win32 application.
 * therefore [dispatcher.exe](https://github.com/131/dispatcher) is available in 2 architectures : x32 & x64
-* 
+
 ## Forced args
 You can force additional args (injected before args that might have been sent toward `[dispatched].exe`
 ``` (node.exe.config)
