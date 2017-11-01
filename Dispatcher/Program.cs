@@ -106,10 +106,11 @@ namespace Dispatcher
             List<string> values = new List<string>();
             foreach (string key in ConfigurationManager.AppSettings) {
                 string value = ConfigurationManager.AppSettings[key];
+                value = Replace(value, replaces);
                 if (key.StartsWith("ARGV"))
                     args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^-]+$") ? value :  "\"" + value + "\"") + " ";
                 if (key.StartsWith("ENV_"))
-                    envs[key.Remove(0,4)] = Replace(value, replaces);
+                    envs[key.Remove(0,4)] = value;
             }
 
             var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
