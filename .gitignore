@@ -2,13 +2,5 @@
 *.suo
 /Dispatcher/bin
 /Dispatcher/obj
-/Utils/bin
-/Utils/obj
-/echo/bin
-/echo/obj
-/bin
-/obj
-
 /*.exe
-/*.exe
-/Dispatcher/bin/Release/dispatcher.exe
+deploy.bat
