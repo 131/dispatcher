@@ -108,7 +108,7 @@ namespace Dispatcher
                 string value = ConfigurationManager.AppSettings[key];
                 value = Replace(value, replaces);
                 if (key.StartsWith("ARGV"))
-                    args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^-]+$") ? value :  "\"" + value + "\"") + " ";
+                    args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value :  "\"" + value + "\"") + " ";
                 if (key.StartsWith("ENV_"))
                     envs[key.Remove(0,4)] = value;
             }
