@@ -17,7 +17,8 @@ Configuration file syntax is :
 ```
 
 # Download
-Find all download in [github releases](https://github.com/131/dispatcher/releases/tag/v1.0.0)
+Find all download in [github releases](https://github.com/131/dispatcher/releases)
+
 
 # Motivation  - sample usage
 I use a lot of command line tool in windows (interpreters, encoders, git & related tools)
