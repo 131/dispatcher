@@ -45,6 +45,9 @@ namespace Dispatcher {
             sInfoEx.StartupInfo.hStdOutput = iStdOut;
             sInfoEx.StartupInfo.hStdError = iStdErr;
 
+            //make sure dispatcher kill its child process when killed
+            var job = new Job();
+            job.AddProcess(Process.GetCurrentProcess().Handle);
 
             Kernel32.CreateProcess(
                 null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
@@ -52,11 +55,6 @@ namespace Dispatcher {
                 IntPtr.Zero, null, ref sInfoEx, out pInfo);
 
             Kernel32.CloseHandle(pInfo.hThread);
-
-            //make sure dispatcher kill its child process when killed
-            var job = new Job();
-            job.AddProcess(Process.GetCurrentProcess().Handle);
-            job.AddProcess(pInfo.hProcess);
 
             Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
 
