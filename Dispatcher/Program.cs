@@ -105,7 +105,9 @@ namespace Dispatcher {
 
             string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
-            exePath = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
+            string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
+            if(File.Exists(exefoo))
+              exePath = exefoo; //let windows resolve it
 
             Dictionary<string, string> replaces = new Dictionary<string, string> {
                 {"%dwd%", dispatcher_dir},
