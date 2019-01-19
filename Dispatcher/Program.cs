@@ -9,16 +9,15 @@ using Utils;
 
 namespace Dispatcher {
     class Program {
-        private static string exePath;
-        private static string args;
-        private static bool use_showwindow;
-
+        
         const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
 
         static void Main() {
+            string exePath, args, cwd;
+            bool use_showwindow;
 
             Dictionary<string, string> envs = new Dictionary<string, string>();
-            if(!ExtractCommandLine(out exePath, out args, out use_showwindow, envs))
+            if(!ExtractCommandLine(out exePath, out args, out use_showwindow, envs, out cwd))
                 Environment.Exit(1);
 
             string exeDir = Path.GetDirectoryName(exePath);
@@ -52,7 +51,7 @@ namespace Dispatcher {
             Kernel32.CreateProcess(
                 null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
                 Kernel32.STARTF_USESTDHANDLES,
-                IntPtr.Zero, null, ref sInfoEx, out pInfo);
+                IntPtr.Zero, cwd, ref sInfoEx, out pInfo);
 
             Kernel32.CloseHandle(pInfo.hThread);
 
@@ -70,9 +69,10 @@ namespace Dispatcher {
             Environment.Exit((int)exitCode);
         }
 
-        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, Dictionary<string, string> envs) {
+        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, Dictionary<string, string> envs, out string cwd) {
             string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
             string dispatcher_dir = Path.GetDirectoryName(dispatcher);
+            cwd = null; //inherit
 
             //ConfigurationManager.AppSettings do not expand exe short name (e.g. search for a missing C:\windows\system32\somelo~1.config file)
 
@@ -121,6 +121,8 @@ namespace Dispatcher {
                     args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
                 if(key.StartsWith("ENV_"))
                     envs[key.Remove(0, 4)] = value;
+                if(key == "CWD")
+                  cwd = value;
             }
 
             var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);

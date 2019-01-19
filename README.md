@@ -71,10 +71,13 @@ You can define custom env var in dispatcher.config
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
+    <!-- Mandatory -->
     <add key="PATH" value="D:\apps\System32\bash.exe"/>
+    <!-- All optionals -->
     <add key="ARGV0" value="-c"/>
     <add key="ARGV1" value="/usr/sbin/sshd -D"/>
     <add key="USE_SHOWWINDOW" value="true"/>
+    <add key="CWD" value="c:\my\working\dir"/>
   </appSettings>
 </configuration>
 ```
