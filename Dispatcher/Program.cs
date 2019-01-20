@@ -8,6 +8,7 @@ using System.Threading;
 using System.Text.RegularExpressions;
 using Utils;
 using System.ServiceProcess;
+using System.Runtime.InteropServices;
 
 namespace Dispatcher {
 
@@ -17,6 +18,7 @@ namespace Dispatcher {
         static string exePath;
         static string args;
         static string cwd;
+        static string logsPath = "";
         static bool use_showwindow;
         static bool as_service;
         static uint exitCode;
@@ -63,11 +65,25 @@ namespace Dispatcher {
             IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
             IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
             IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
+            IntPtr hLogs = IntPtr.Zero;
+
 
             sInfoEx.StartupInfo.wShowWindow = Kernel32.SW_HIDE;
             sInfoEx.StartupInfo.hStdInput = iStdIn;
             sInfoEx.StartupInfo.hStdOutput = iStdOut;
             sInfoEx.StartupInfo.hStdError = iStdErr;
+
+            if (!String.IsNullOrEmpty(logsPath)) {
+                SECURITY_ATTRIBUTES lpSecurityAttributes = new SECURITY_ATTRIBUTES();
+                lpSecurityAttributes.bInheritHandle = 1;
+                lpSecurityAttributes.nLength = Marshal.SizeOf(lpSecurityAttributes);
+                hLogs = Kernel32.CreateFile(logsPath, Kernel32.DesiredAccess.GENERIC_WRITE, 0x00000001 //share read
+                , lpSecurityAttributes, Kernel32.CreationDisposition.CREATE_ALWAYS, 0, IntPtr.Zero);
+
+                sInfoEx.StartupInfo.hStdOutput = hLogs;
+                sInfoEx.StartupInfo.hStdError = hLogs;
+            }
+
 
             //make sure dispatcher kill its child process when killed
             var job = new Job();
@@ -85,6 +101,8 @@ namespace Dispatcher {
             Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
 
             //clean up
+            if(hLogs != IntPtr.Zero)
+                Kernel32.CloseHandle(hLogs);
             Kernel32.CloseHandle(pInfo.hProcess);
             Kernel32.CloseHandle(iStdOut);
             Kernel32.CloseHandle(iStdErr);
@@ -131,15 +149,22 @@ namespace Dispatcher {
             string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
             if (File.Exists(exefoo))
                 exePath = exefoo; //let windows resolve it
-
+            
             Dictionary<string, string> replaces = new Dictionary<string, string> {
                 {"%dwd%", dispatcher_dir},
+                {"%Y%",  DateTime.Now.ToString("yyyy")},
+                {"%m%", DateTime.Now.ToString("MM")},
+                {"%d%", DateTime.Now.ToString("dd")},
+                {"%H%", DateTime.Now.ToString("HH")},
+                {"%i%", DateTime.Now.ToString("mm")},
+                {"%s%", DateTime.Now.ToString("ss")},
             };
 
-
+            
             foreach (string key in config.AllKeys) {
                 string value = config[key].Value;
                 value = Replace(value, replaces);
+                value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
                     args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
                 if (key.StartsWith("ENV_"))
@@ -148,6 +173,8 @@ namespace Dispatcher {
                     cwd = value;
                 if (key == "AS_SERVICE")
                     as_service = true;
+                if (key == "OUTPUT")
+                    logsPath = value;
             }
 
             var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);

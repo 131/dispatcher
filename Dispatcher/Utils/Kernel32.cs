@@ -33,6 +33,7 @@ namespace Utils
   }
 
 
+
   [StructLayout(LayoutKind.Sequential)]
   struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
   {
@@ -109,6 +110,23 @@ namespace Utils
 
   class Kernel32
   {
+
+    public enum DesiredAccess : uint
+    {
+        GENERIC_WRITE = 30,
+        GENERIC_READ = 31
+    }
+
+    public enum CreationDisposition : uint
+    {
+        CREATE_NEW = 1,
+        CREATE_ALWAYS = 2,
+        OPEN_EXISTING = 3,
+        OPEN_ALWAYS = 4,
+        TRUNCATE_EXISTING = 5
+    }
+
+
     public const UInt32 INFINITE = 0xFFFFFFFF;
     public const int STARTF_USESTDHANDLES = 0x00000100;
     public const int CREATE_NO_WINDOW = 0x08000000;
@@ -148,6 +166,9 @@ namespace Utils
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool InitializeProcThreadAttributeList(
         out IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr CreateFile(string lpFileName, DesiredAccess dwDesiredAccess, uint dwShareMode, SECURITY_ATTRIBUTES lpSecurityAttributes, CreationDisposition dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
 
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
