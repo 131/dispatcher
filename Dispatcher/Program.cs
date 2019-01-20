@@ -175,8 +175,11 @@ namespace Dispatcher {
         }
         protected void Run()
         {
+          int delay = 1000;
           while(true) {
             Program.Run();
+            Thread.Sleep(delay);
+            delay = delay * 2;
           }
         }
 
