@@ -19,7 +19,8 @@ namespace Dispatcher {
         static string cwd;
         static bool use_showwindow;
         static bool as_service;
-
+        static uint exitCode;
+        internal  static PROCESS_INFORMATION pInfo;
         static void Main()
         {
 
@@ -41,6 +42,7 @@ namespace Dispatcher {
                 ServiceBase.Run(ServicesToRun);
             } else {
                 Run();
+                Environment.Exit((int)exitCode);
             }
 
 
@@ -49,7 +51,7 @@ namespace Dispatcher {
 
         public static void Run() {
 
-            var pInfo = new PROCESS_INFORMATION();
+            pInfo = new PROCESS_INFORMATION();
             var sInfoEx = new STARTUPINFOEX();
             sInfoEx.StartupInfo = new STARTUPINFO();
 
@@ -80,7 +82,6 @@ namespace Dispatcher {
 
             Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
 
-            uint exitCode;
             Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
 
             //clean up
@@ -88,8 +89,6 @@ namespace Dispatcher {
             Kernel32.CloseHandle(iStdOut);
             Kernel32.CloseHandle(iStdErr);
             Kernel32.CloseHandle(iStdIn);
-
-            Environment.Exit((int)exitCode);
         }
 
         private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, out bool as_service,  Dictionary<string, string> envs, out string cwd) {
@@ -166,18 +165,29 @@ namespace Dispatcher {
 
 
 
-        public class Service1 : ServiceBase
-        {
+    public class Service1 : ServiceBase {
 
+        protected Thread t;
         protected override void OnStart(string[] args)
         {
-            var t = new Thread(() => Program.Run());
+            t = new Thread(() => Run());
             t.Start();
+        }
+        protected void Run()
+        {
+          while(true) {
+            Program.Run();
+          }
         }
 
         protected override void OnStop()
         {
-            Environment.Exit(255);
+
+          t.Abort();
+          try {
+            Process remote= Process.GetProcessById(Program.pInfo.dwProcessId);
+            remote.Kill();
+          } catch(Exception err) { }
         }
 
     }
