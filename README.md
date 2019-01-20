@@ -117,6 +117,20 @@ Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service complia
 </configuration>
 ```
 
+## Redirect output to a file (usefull for services)
+Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modifiers are available.
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="PATH" value="node.exe"/>
+    <add key="ARGV0" value="main.js"/>
+    <add key="OUTPUT" value="%temp%\logs-%Y%-%m%-%d% %H%-%i%-%s%.log"/>
+  </appSettings>
+</configuration>
+```
+
+
 
 ## Using multiple versions of the same software
 ```
