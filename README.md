@@ -104,6 +104,20 @@ D:\apps\wsl-init.exe.config
 </configuration>
 ```
 
+## Using dispatcher to run Windows service
+Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service compliant interface. (therefore, you can use **dispatcher** to register any nodejs/php/whaterver script as a service. You'll have to manage the registration by yourself - see [sc create](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create),[sc start](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-start), [sc stop](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-stop), ... APIs)
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="PATH" value="node.exe"/>
+    <add key="ARGV0" value="main.js"/>
+    <add key="AS_SERVICE" value="true"/>
+  </appSettings>
+</configuration>
+```
+
+
 ## Using multiple versions of the same software
 ```
 install php 5 in 

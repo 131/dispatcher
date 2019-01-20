@@ -4,27 +4,50 @@ using System.IO;
 using System.Reflection;
 using System.Configuration;
 using System.Diagnostics;
+using System.Threading;
 using System.Text.RegularExpressions;
 using Utils;
+using System.ServiceProcess;
 
 namespace Dispatcher {
-    class Program {
-        
-        const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
 
-        static void Main() {
-            string exePath, args, cwd;
-            bool use_showwindow;
+    public class Program
+    {
+        const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
+        static string exePath;
+        static string args;
+        static string cwd;
+        static bool use_showwindow;
+        static bool as_service;
+
+        static void Main()
+        {
 
             Dictionary<string, string> envs = new Dictionary<string, string>();
-            if(!ExtractCommandLine(out exePath, out args, out use_showwindow, envs, out cwd))
+            if (!ExtractCommandLine(out exePath, out args, out use_showwindow, out as_service, envs, out cwd))
                 Environment.Exit(1);
 
             string exeDir = Path.GetDirectoryName(exePath);
             envs["Path"] = Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
-            foreach(KeyValuePair<string, string> env in envs)
+            foreach (KeyValuePair<string, string> env in envs)
                 Environment.SetEnvironmentVariable(env.Key, env.Value);
 
+            if (as_service) {
+                ServiceBase[] ServicesToRun;
+                ServicesToRun = new ServiceBase[]
+                {
+                    new Service1()
+                };
+                ServiceBase.Run(ServicesToRun);
+            } else {
+                Run();
+            }
+
+
+
+        }
+
+        public static void Run() {
 
             var pInfo = new PROCESS_INFORMATION();
             var sInfoEx = new STARTUPINFOEX();
@@ -32,7 +55,7 @@ namespace Dispatcher {
 
             sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
 
-            if(use_showwindow)
+            if (use_showwindow)
                 sInfoEx.StartupInfo.dwFlags |= Kernel32.STARTF_USESHOWWINDOW;
 
             IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
@@ -69,18 +92,19 @@ namespace Dispatcher {
             Environment.Exit((int)exitCode);
         }
 
-        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, Dictionary<string, string> envs, out string cwd) {
+        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, out bool as_service,  Dictionary<string, string> envs, out string cwd) {
             string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
             string dispatcher_dir = Path.GetDirectoryName(dispatcher);
             cwd = null; //inherit
+            as_service = false;
 
             //ConfigurationManager.AppSettings do not expand exe short name (e.g. search for a missing C:\windows\system32\somelo~1.config file)
 
             KeyValueConfigurationCollection config = new KeyValueConfigurationCollection();
 
-            if(ConfigurationManager.AppSettings["PATH"] != null) {
-                foreach(string key in ConfigurationManager.AppSettings)
-                    config.Add(key,  ConfigurationManager.AppSettings[key]);
+            if (ConfigurationManager.AppSettings["PATH"] != null) {
+                foreach (string key in ConfigurationManager.AppSettings)
+                    config.Add(key, ConfigurationManager.AppSettings[key]);
             } else {
                 config = ConfigurationManager.OpenExeConfiguration(dispatcher).AppSettings.Settings;
             }
@@ -95,10 +119,10 @@ namespace Dispatcher {
 
             exePath = config["PATH"].Value;
 
-            if(config[FLAG_USE_SHOWWINDOW] != null)
+            if (config[FLAG_USE_SHOWWINDOW] != null)
                 use_showwindow = !(config[FLAG_USE_SHOWWINDOW].Value == "0" || config[FLAG_USE_SHOWWINDOW].Value == "");
-            
-            if(String.IsNullOrEmpty(exePath)) {
+
+            if (String.IsNullOrEmpty(exePath)) {
                 Console.Error.WriteLine("Cannot resolve cmd");
                 return false;
             }
@@ -106,37 +130,57 @@ namespace Dispatcher {
             string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
             string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
-            if(File.Exists(exefoo))
-              exePath = exefoo; //let windows resolve it
+            if (File.Exists(exefoo))
+                exePath = exefoo; //let windows resolve it
 
             Dictionary<string, string> replaces = new Dictionary<string, string> {
                 {"%dwd%", dispatcher_dir},
             };
 
 
-            foreach(string key in config.AllKeys) {
+            foreach (string key in config.AllKeys) {
                 string value = config[key].Value;
                 value = Replace(value, replaces);
-                if(key.StartsWith("ARGV"))
+                if (key.StartsWith("ARGV"))
                     args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
-                if(key.StartsWith("ENV_"))
+                if (key.StartsWith("ENV_"))
                     envs[key.Remove(0, 4)] = value;
-                if(key == "CWD")
-                  cwd = value;
+                if (key == "CWD")
+                    cwd = value;
+                if (key == "AS_SERVICE")
+                    as_service = true;
             }
 
             var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
-            if(argsStart != -1)
+            if (argsStart != -1)
                 args += Environment.CommandLine.Substring(argsStart + 1);
 
             return true;
         }
         public static string Replace(string str, Dictionary<string, string> dict) {
-            foreach(KeyValuePair<string, string> replacement in dict)
+            foreach (KeyValuePair<string, string> replacement in dict)
                 str = str.Replace(replacement.Key, replacement.Value);
             return str;
         }
-
     }
 
+
+
+        public class Service1 : ServiceBase
+        {
+
+        protected override void OnStart(string[] args)
+        {
+            var t = new Thread(() => Program.Run());
+            t.Start();
+        }
+
+        protected override void OnStop()
+        {
+            Environment.Exit(255);
+        }
+
+    }
 }
+
+
