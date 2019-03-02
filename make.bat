@@ -15,7 +15,7 @@ del %win% %exe% %win_64% %exe_64% %win_elevated% %exe_elevated% %win_64_elevated
 
 @set csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\Csc.exe
 @set args=/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0  /errorendlocation /preferreduilang:en-US /highentropyva- /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.Configuration.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.ServiceProcess.dll /filealign:512 /utf8output 
-@set files=Dispatcher\Utils\Job.cs Dispatcher\Utils\Kernel32.cs Dispatcher\Program.cs Dispatcher\Properties\AssemblyInfo.cs
+@set files=Dispatcher\Utils\Job.cs Dispatcher\Utils\Kernel32.cs Dispatcher\Program.cs Dispatcher\Properties\AssemblyInfo.cs Dispatcher\ProcessExtensions.cs
 
 
 

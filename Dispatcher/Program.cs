@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Utils;
 using System.ServiceProcess;
 using System.Runtime.InteropServices;
+using murrayju.ProcessExtensions;
 
 namespace Dispatcher {
 
@@ -21,17 +22,22 @@ namespace Dispatcher {
         static string logsPath = "";
         static bool use_showwindow;
         static bool as_service;
+        static bool as_desktop_user;
+        static bool use_job;
         static uint exitCode;
         internal  static PROCESS_INFORMATION pInfo;
         static void Main()
         {
 
             Dictionary<string, string> envs = new Dictionary<string, string>();
-            if (!ExtractCommandLine(out exePath, out args, out use_showwindow, out as_service, envs, out cwd))
+            envs["PATH"] = Environment.GetEnvironmentVariable("PATH");
+
+            if (!ExtractCommandLine(out exePath, out args, out use_showwindow, out as_service, out as_desktop_user, out use_job, envs, out cwd))
                 Environment.Exit(1);
 
             string exeDir = Path.GetDirectoryName(exePath);
-            envs["Path"] = Environment.GetEnvironmentVariable("PATH") + ";" + exeDir;
+            envs["PATH"] = envs["PATH"] + ";" + exeDir;
+
             foreach (KeyValuePair<string, string> env in envs)
                 Environment.SetEnvironmentVariable(env.Key, env.Value);
 
@@ -52,6 +58,24 @@ namespace Dispatcher {
         }
 
         public static void Run() {
+
+            //make sure dispatcher kill its child process when killed
+            if(use_job)
+            {
+              var job = new Job();
+              job.AddProcess(Process.GetCurrentProcess().Handle);
+            }
+
+            if (as_desktop_user)
+            {
+                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, args, cwd);
+
+                Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+                Kernel32.CloseHandle(pInfo.hThread);
+                Kernel32.CloseHandle(pInfo.hProcess);
+                Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
+                return;
+            }
 
             pInfo = new PROCESS_INFORMATION();
             var sInfoEx = new STARTUPINFOEX();
@@ -85,10 +109,6 @@ namespace Dispatcher {
             }
 
 
-            //make sure dispatcher kill its child process when killed
-            var job = new Job();
-            job.AddProcess(Process.GetCurrentProcess().Handle);
-
             Kernel32.CreateProcess(
                 null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
                 Kernel32.STARTF_USESTDHANDLES,
@@ -109,11 +129,13 @@ namespace Dispatcher {
             Kernel32.CloseHandle(iStdIn);
         }
 
-        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, out bool as_service,  Dictionary<string, string> envs, out string cwd) {
+        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, out bool as_service, out bool as_desktop_user, out bool use_job, Dictionary<string, string> envs, out string cwd) {
             string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
             string dispatcher_dir = Path.GetDirectoryName(dispatcher);
             cwd = null; //inherit
             as_service = false;
+            as_desktop_user = false;
+            use_job = true;
 
             //ConfigurationManager.AppSettings do not expand exe short name (e.g. search for a missing C:\windows\system32\somelo~1.config file)
 
@@ -173,8 +195,13 @@ namespace Dispatcher {
                     cwd = value;
                 if (key == "AS_SERVICE")
                     as_service = true;
-                if (key == "OUTPUT")
+                if (key == "AS_DESKTOP_USER") {
+                    as_desktop_user = true;
+                    use_job = false;
+                } if (key == "OUTPUT")
                     logsPath = value;
+                if(key == "USE_JOB")
+                    use_job = ! isFalse(value);
             }
 
             var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
@@ -188,6 +215,11 @@ namespace Dispatcher {
                 str = str.Replace(replacement.Key, replacement.Value);
             return str;
         }
+
+        public static bool isFalse(string str) {
+          return String.IsNullOrEmpty(str) || str == "false" || str == "0";
+        }
+
     }
 
 
@@ -197,6 +229,7 @@ namespace Dispatcher {
         protected Thread t;
         protected override void OnStart(string[] args)
         {
+
             t = new Thread(() => Run());
             t.Start();
         }

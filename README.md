@@ -105,7 +105,9 @@ D:\apps\wsl-init.exe.config
 ```
 
 ## Using dispatcher to run Windows service
-Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service compliant interface. (therefore, you can use **dispatcher** to register any nodejs/php/whaterver script as a service. You'll have to manage the registration by yourself - see [sc create](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create),[sc start](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-start), [sc stop](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-stop), ... APIs)
+Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service compliant interface. (therefore, you can use **dispatcher** to register any nodejs/php/whaterver script as a service. You'll have to manage the registration by yourself - see [sc create](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create),[sc start](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-start), [sc stop](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-stop), ... APIs). Also, if needed, you can run a service in an interactive session (interact with desktop - use [murrayju CreateProcessAsUser](https://github.com/murrayju/CreateProcessAsUser) ).
+
+
 ```
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
@@ -113,6 +115,10 @@ Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service complia
     <add key="PATH" value="node.exe"/>
     <add key="ARGV0" value="main.js"/>
     <add key="AS_SERVICE" value="true"/>
+
+<!-- to run a service in interactive session -->
+    <add key="AS_DESKTOP_USER" value="true"/>
+
   </appSettings>
 </configuration>
 ```
@@ -158,6 +164,7 @@ dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to
 
 # Credits
 * [131](https://github.com/131)
+* [murrayju](https://github.com/murrayju/CreateProcessAsUser)
 
 # Relatives/alternatives
 * [run.exe](http://www.straightrunning.com/projectrun.php) kinda stuff
