@@ -1,6 +1,7 @@
 dispatcher
 ==========
-Powerful process forwarder (or proxy) for Windows.
+Powerful process forwarder (or proxy) for Windows. It can be considered as a open source, free and more powerfull alternative to 
+[chocolatey shimgen](https://chocolatey.org/docs/features-shim)
 
 # How to use
 Rename/duplicate `dispatcher.exe` to `[something].exe`.
@@ -168,6 +169,7 @@ dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to
 
 # Relatives/alternatives
 * [run.exe](http://www.straightrunning.com/projectrun.php) kinda stuff
+* [shimgen](https://chocolatey.org/docs/features-shim)
 
 # Shoutbox, keywords, SEO love
 background cmd, wsl bash, linux subsystem, process forward, kernel32, USE_SHOWWINDOW
