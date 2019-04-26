@@ -203,10 +203,12 @@ namespace Dispatcher {
                 if(key == "USE_JOB")
                     use_job = ! isFalse(value);
             }
+            var argv = System.Environment.GetCommandLineArgs();
 
-            var argsStart = Environment.CommandLine.IndexOf(" ", dispatched_cmd.Length);
-            if (argsStart != -1)
-                args += Environment.CommandLine.Substring(argsStart + 1);
+            for(var i = 1; i < argv.Length; i++) {
+                string value = argv[i];
+                args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
+            }
 
             return true;
         }
