@@ -114,6 +114,7 @@ namespace Utils
     public enum DesiredAccess : uint
     {
         GENERIC_WRITE = 30,
+        FILE_APPEND_DATA = 4,
         GENERIC_READ = 31
     }
 

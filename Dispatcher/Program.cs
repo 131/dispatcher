@@ -101,8 +101,8 @@ namespace Dispatcher {
                 SECURITY_ATTRIBUTES lpSecurityAttributes = new SECURITY_ATTRIBUTES();
                 lpSecurityAttributes.bInheritHandle = 1;
                 lpSecurityAttributes.nLength = Marshal.SizeOf(lpSecurityAttributes);
-                hLogs = Kernel32.CreateFile(logsPath, Kernel32.DesiredAccess.GENERIC_WRITE, 0x00000001 //share read
-                , lpSecurityAttributes, Kernel32.CreationDisposition.CREATE_ALWAYS, 0, IntPtr.Zero);
+                hLogs = Kernel32.CreateFile(logsPath, Kernel32.DesiredAccess.FILE_APPEND_DATA, 0x00000003 //share read& w
+                , lpSecurityAttributes, Kernel32.CreationDisposition.OPEN_ALWAYS, 0, IntPtr.Zero);
 
                 sInfoEx.StartupInfo.hStdOutput = hLogs;
                 sInfoEx.StartupInfo.hStdError = hLogs;
