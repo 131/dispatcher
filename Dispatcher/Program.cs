@@ -13,8 +13,19 @@ using murrayju.ProcessExtensions;
 
 namespace Dispatcher {
 
+
+
     public class Program
     {
+
+
+
+      //Console CTRL+C is delegated to subprocess, we have nothing to do here
+      private static bool ConsoleCtrlCheck(Kernel32.CtrlTypes ctrlType)
+      {
+          return true;
+      }
+  
         const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
         static string exePath;
         static string args;
@@ -26,8 +37,12 @@ namespace Dispatcher {
         static bool use_job;
         static uint exitCode;
         internal  static PROCESS_INFORMATION pInfo;
+
+
         static void Main()
         {
+
+            Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
             Dictionary<string, string> envs = new Dictionary<string, string>();
             envs["PATH"] = Environment.GetEnvironmentVariable("PATH");
@@ -115,9 +130,7 @@ namespace Dispatcher {
                 IntPtr.Zero, cwd, ref sInfoEx, out pInfo);
 
             Kernel32.CloseHandle(pInfo.hThread);
-
             Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
-
             Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
 
             //clean up

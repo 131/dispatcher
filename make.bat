@@ -27,11 +27,11 @@ del %win% %exe% %win_64% %exe_64% %win_elevated% %exe_elevated% %win_64_elevated
 
 
 
-%csc%  %args% %elevate% /platform:x86 /define:DISPACHER_WIN /out:%win_elevated%  /target:winexe %files%
-%csc%  %args% %elevate% /platform:x86 /out:%exe_elevated%  /target:exe %files%
+REM %csc%  %args% %elevate% /platform:x86 /define:DISPACHER_WIN /out:%win_elevated%  /target:winexe %files%
+REM %csc%  %args% %elevate% /platform:x86 /out:%exe_elevated%  /target:exe %files%
 
-%csc%  %args% %elevate% /platform:x64 /define:DISPACHER_WIN /out:%win_64_elevated%  /target:winexe %files%
-%csc%  %args% %elevate% /platform:x64 /out:%exe_64_elevated%  /target:exe %files%
+REM %csc%  %args% %elevate% /platform:x64 /define:DISPACHER_WIN /out:%win_64_elevated%  /target:winexe %files%
+REM %csc%  %args% %elevate% /platform:x64 /out:%exe_64_elevated%  /target:exe %files%
 
 
 

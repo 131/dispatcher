@@ -33,7 +33,6 @@ namespace Utils
   }
 
 
-
   [StructLayout(LayoutKind.Sequential)]
   struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
   {
@@ -128,6 +127,19 @@ namespace Utils
     }
 
 
+    // An enumerated type for the control messages
+    // sent to the handler routine.
+    public enum CtrlTypes
+    {
+        CTRL_C_EVENT = 0,
+        CTRL_BREAK_EVENT,
+        CTRL_CLOSE_EVENT,
+        CTRL_LOGOFF_EVENT = 5,
+        CTRL_SHUTDOWN_EVENT
+    }
+
+
+
     public const UInt32 INFINITE = 0xFFFFFFFF;
     public const int STARTF_USESTDHANDLES = 0x00000100;
     public const int CREATE_NO_WINDOW = 0x08000000;
@@ -148,6 +160,11 @@ namespace Utils
 
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool CloseHandle(IntPtr nStdHandle);
+
+    public delegate bool HandlerRoutine(CtrlTypes CtrlType);
+
+    [DllImport("Kernel32")]
+    public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
 
 
     [DllImport("kernel32.dll", SetLastError = true)]
