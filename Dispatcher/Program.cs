@@ -83,7 +83,7 @@ namespace Dispatcher {
 
             if (as_desktop_user)
             {
-                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, args, cwd);
+                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, args, cwd, !use_showwindow);
 
                 Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
                 Kernel32.CloseHandle(pInfo.hThread);
