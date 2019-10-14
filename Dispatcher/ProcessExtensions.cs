@@ -200,13 +200,14 @@ namespace murrayju.ProcessExtensions
             return bResult;
         }
 
-        internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, string cmdLine = null, string workDir = null, bool visible = true)
+        internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, string args = "", string workDir = null, bool visible = true)
         {
             var hUserToken = IntPtr.Zero;
             var startInfo = new STARTUPINFO();
             var procInfo = new PROCESS_INFORMATION();
             var pEnv = IntPtr.Zero;
             int iResultOfCreateProcessAsUser;
+            string cmdLine = "\"" + appPath + "\" " + args;
 
             startInfo.cb = Marshal.SizeOf(typeof(STARTUPINFO));
 
