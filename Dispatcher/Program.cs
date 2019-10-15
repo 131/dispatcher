@@ -234,9 +234,14 @@ namespace Dispatcher {
         public static bool isFalse(string str) {
           return String.IsNullOrEmpty(str) || str == "false" || str == "0";
         }
+        
+        
+        
+
+
+
 
     }
-
 
 
     public class Service1 : ServiceBase {

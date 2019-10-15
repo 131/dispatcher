@@ -4,3 +4,4 @@
 /Dispatcher/obj
 /*.exe
 deploy.bat
+*.vs

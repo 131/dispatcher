@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Utils;
 
@@ -154,6 +156,37 @@ namespace murrayju.ProcessExtensions
 
         #endregion
 
+
+
+
+    public static string WhereSearch(string filename) {
+
+            var paths = new List<string>();
+            paths.Add(Environment.CurrentDirectory);
+
+            foreach(string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+                paths.Add(path);
+
+            var extensions = new List<string>();
+            foreach (string ext in Environment.GetEnvironmentVariable("PATHEXT").Split(';'))
+                if(ext.StartsWith("."))
+                    extensions.Add(ext);
+
+            foreach(string path in paths)
+            {
+                foreach (string ext in extensions)
+                {
+                    var fullpath = Path.Combine(path, filename);
+                    if (File.Exists(fullpath))
+                        return fullpath;
+                    fullpath = Path.Combine(path, filename + ext);
+                    if (File.Exists(fullpath))
+                        return fullpath;
+                }
+            }
+            return filename;
+    }
+
         // Gets the user token from the currently active session
         private static bool GetSessionUserToken(ref IntPtr phUserToken)
         {
@@ -207,6 +240,8 @@ namespace murrayju.ProcessExtensions
             var procInfo = new PROCESS_INFORMATION();
             var pEnv = IntPtr.Zero;
             int iResultOfCreateProcessAsUser;
+            appPath = WhereSearch(appPath);
+
             string cmdLine = "\"" + appPath + "\" " + args;
 
             startInfo.cb = Marshal.SizeOf(typeof(STARTUPINFO));
