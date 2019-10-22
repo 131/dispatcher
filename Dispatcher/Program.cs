@@ -36,6 +36,8 @@ namespace Dispatcher {
         static bool as_desktop_user;
         static bool use_job;
         static uint exitCode;
+        static Dictionary<string, string> envs;
+
         internal  static PROCESS_INFORMATION pInfo;
 
 
@@ -44,7 +46,7 @@ namespace Dispatcher {
 
             Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
-            Dictionary<string, string> envs = new Dictionary<string, string>();
+            envs = new Dictionary<string, string>();
             envs["PATH"] = Environment.GetEnvironmentVariable("PATH");
 
             if (!ExtractCommandLine(out exePath, out args, out use_showwindow, out as_service, out as_desktop_user, out use_job, envs, out cwd))
@@ -83,7 +85,7 @@ namespace Dispatcher {
 
             if (as_desktop_user)
             {
-                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, args, cwd, !use_showwindow);
+                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow);
 
                 Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
                 Kernel32.CloseHandle(pInfo.hThread);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Utils;
+using System.Text;
 
 namespace murrayju.ProcessExtensions
 {
@@ -187,6 +188,25 @@ namespace murrayju.ProcessExtensions
             return filename;
     }
 
+
+
+  static List<byte> ExtractMultiString(IntPtr ptr)
+  {
+      List<byte> foo = new List<byte>(0);
+      while (true)
+      {
+          string str = Marshal.PtrToStringUni(ptr);
+          if (str.Length == 0)
+              break;
+          foo.AddRange(Encoding.Unicode.GetBytes(str));
+          foo.Add((byte)0);
+          foo.Add((byte)0);
+          ptr = new IntPtr(ptr.ToInt64() + (str.Length + 1 /* char \0 */) * sizeof(char));
+      }
+      return foo;
+
+  }
+
         // Gets the user token from the currently active session
         private static bool GetSessionUserToken(ref IntPtr phUserToken)
         {
@@ -233,7 +253,8 @@ namespace murrayju.ProcessExtensions
             return bResult;
         }
 
-        internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, string args = "", string workDir = null, bool visible = true)
+
+    internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs, string args = "", string workDir = null, bool visible = true)
         {
             var hUserToken = IntPtr.Zero;
             var startInfo = new STARTUPINFO();
@@ -262,6 +283,22 @@ namespace murrayju.ProcessExtensions
                     throw new Exception("StartProcessAsCurrentUser: CreateEnvironmentBlock failed.");
                 }
 
+                List<byte> envSB = ExtractMultiString(pEnv);
+
+                foreach (KeyValuePair<string, string> env in envs) {
+                    envSB.AddRange(Encoding.Unicode.GetBytes(env.Key + "=" + env.Value));
+                    envSB.Add((byte)0);
+                    envSB.Add((byte)0);
+                }
+                envSB.Add((byte)0);
+                envSB.Add((byte)0);
+
+                byte[] foo = envSB.ToArray();
+
+                IntPtr envdst = Marshal.AllocHGlobal(foo.Length);
+                Marshal.Copy(envSB.ToArray(), 0, envdst, envSB.ToArray().Length);
+
+
                 if (!CreateProcessAsUser(hUserToken,
                     appPath, // Application Name
                     cmdLine, // Command Line
@@ -269,7 +306,7 @@ namespace murrayju.ProcessExtensions
                     IntPtr.Zero,
                     false,
                     dwCreationFlags,
-                    pEnv,
+                    envdst,
                     workDir, // Working directory
                     ref startInfo,
                     out procInfo))
@@ -278,10 +315,12 @@ namespace murrayju.ProcessExtensions
                     throw new Exception("StartProcessAsCurrentUser: CreateProcessAsUser failed.  Error Code -" + iResultOfCreateProcessAsUser);
                 }
 
+
                 iResultOfCreateProcessAsUser = Marshal.GetLastWin32Error();
             }
             finally
             {
+
                 CloseHandle(hUserToken);
                 if (pEnv != IntPtr.Zero)
                 {
