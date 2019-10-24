@@ -69,23 +69,19 @@ namespace Dispatcher {
                 Run();
                 Environment.Exit((int)exitCode);
             }
-
-
-
         }
 
         public static void Run() {
 
-            //make sure dispatcher kill its child process when killed
-            if(use_job)
-            {
-              var job = new Job();
-              job.AddProcess(Process.GetCurrentProcess().Handle);
-            }
-
             if (as_desktop_user)
             {
                 pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow);
+
+                if (use_job)
+                {
+                    var job2 = new Job();
+                    job2.AddProcess(pInfo.hProcess);
+                }
 
                 Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
                 Kernel32.CloseHandle(pInfo.hThread);
@@ -93,6 +89,16 @@ namespace Dispatcher {
                 Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
                 return;
             }
+
+
+            //make sure dispatcher kill its child process when killed
+            if (use_job)
+            {
+              var job = new Job();
+              job.AddProcess(Process.GetCurrentProcess().Handle);
+            }
+
+
 
             pInfo = new PROCESS_INFORMATION();
             var sInfoEx = new STARTUPINFOEX();
@@ -125,10 +131,13 @@ namespace Dispatcher {
                 sInfoEx.StartupInfo.hStdError = hLogs;
             }
 
+            uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT;
+            if (!use_job)
+                dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
 
             Kernel32.CreateProcess(
                 null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
-                Kernel32.STARTF_USESTDHANDLES,
+                dwCreationFlags,
                 IntPtr.Zero, cwd, ref sInfoEx, out pInfo);
 
             Kernel32.CloseHandle(pInfo.hThread);
@@ -212,7 +221,6 @@ namespace Dispatcher {
                     as_service = true;
                 if (key == "AS_DESKTOP_USER") {
                     as_desktop_user = true;
-                    use_job = false;
                 } if (key == "OUTPUT")
                     logsPath = value;
                 if(key == "USE_JOB")

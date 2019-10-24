@@ -11,11 +11,6 @@ namespace murrayju.ProcessExtensions
     {
         #region Win32 Constants
 
-        private const int CREATE_UNICODE_ENVIRONMENT = 0x00000400;
-        private const int CREATE_NO_WINDOW = 0x08000000;
-
-        private const int CREATE_NEW_CONSOLE = 0x00000010;
-
         private const uint INVALID_SESSION_ID = 0xFFFFFFFF;
         private static readonly IntPtr WTS_CURRENT_SERVER_HANDLE = IntPtr.Zero;
 
@@ -254,7 +249,8 @@ namespace murrayju.ProcessExtensions
         }
 
 
-    internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs, string args = "", string workDir = null, bool visible = true)
+    internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs,
+            string args = "", string workDir = null, bool visible = true)
         {
             var hUserToken = IntPtr.Zero;
             var startInfo = new STARTUPINFO();
@@ -274,7 +270,9 @@ namespace murrayju.ProcessExtensions
                     throw new Exception("StartProcessAsCurrentUser: GetSessionUserToken failed.");
                 }
 
-                uint dwCreationFlags = CREATE_UNICODE_ENVIRONMENT | (uint)(visible ? CREATE_NEW_CONSOLE : CREATE_NO_WINDOW);
+                uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT | (uint)(visible ? Kernel32.CREATE_NEW_CONSOLE : Kernel32.CREATE_NO_WINDOW);
+                dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
+
                 startInfo.wShowWindow = (short)(visible ? SW.SW_SHOW : SW.SW_HIDE);
                 startInfo.lpDesktop = "winsta0\\default";
 
@@ -300,7 +298,7 @@ namespace murrayju.ProcessExtensions
 
 
                 if (!CreateProcessAsUser(hUserToken,
-                    appPath, // Application Name
+                    null, // Application Name
                     cmdLine, // Command Line
                     IntPtr.Zero,
                     IntPtr.Zero,

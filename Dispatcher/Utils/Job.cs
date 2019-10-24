@@ -15,9 +15,9 @@ namespace Utils
       m_handle = Kernel32.CreateJobObject(null, null);
 
       JOBOBJECT_BASIC_LIMIT_INFORMATION info = new JOBOBJECT_BASIC_LIMIT_INFORMATION();
-      info.LimitFlags = 0x2000;
+      info.LimitFlags = Kernel32.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | Kernel32.JOB_OBJECT_LIMIT_BREAKAWAY_OK;
 
-      JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
+     JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedInfo = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
       extendedInfo.BasicLimitInformation = info;
 
       int length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));

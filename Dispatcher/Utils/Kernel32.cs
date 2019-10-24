@@ -55,10 +55,11 @@ namespace Utils
     GroupInformation = 11
   }
 
+
   #endregion
 
-  #region kernel32 strucs
-  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    #region kernel32 strucs
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   struct STARTUPINFOEX
   {
     public STARTUPINFO StartupInfo;
@@ -141,15 +142,27 @@ namespace Utils
 
 
     public const UInt32 INFINITE = 0xFFFFFFFF;
+
+
     public const int STARTF_USESTDHANDLES = 0x00000100;
+
+
     public const int CREATE_NO_WINDOW = 0x08000000;
-    public const int DETACHED_PROCESS = 0x00000008;
+    public const int CREATE_BREAKAWAY_FROM_JOB = 0x01000000;
+    public const int CREATE_UNICODE_ENVIRONMENT = 0x00000400;
+    public const int CREATE_NEW_CONSOLE = 0x00000010;
+
+        public const int DETACHED_PROCESS = 0x00000008;
     public const int SW_HIDE = 0x0000000;
     public const int STARTF_USESHOWWINDOW  = 0x00000001;
 
     public const int STD_OUTPUT_HANDLE = -11;
     public const int STD_INPUT_HANDLE = -10;
     public const int STD_ERROR_HANDLE = -12;
+
+
+    public const int JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x00000800;
+    public const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000;
 
 
     [DllImport("kernel32.dll", SetLastError = true)]
