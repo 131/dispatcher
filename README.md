@@ -112,6 +112,11 @@ D:\apps\wsl-init.exe.config
 </configuration>
 ```
 
+
+## Pre-executation command
+Using the `PRESTART_CMD` flag make **dispatcher** run a command before another (usefull for services).
+
+
 ## Using dispatcher to run Windows service
 Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service compliant interface. (therefore, you can use **dispatcher** to register any nodejs/php/whaterver script as a service. You'll have to manage the registration by yourself - see [sc create](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create),[sc start](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-start), [sc stop](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-stop), ... APIs). Also, if needed, you can run a service in an interactive session (interact with desktop - use [murrayju CreateProcessAsUser](https://github.com/murrayju/CreateProcessAsUser) ).
 

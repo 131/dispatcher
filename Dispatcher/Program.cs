@@ -30,6 +30,8 @@ namespace Dispatcher {
         static string exePath;
         static string args;
         static string cwd;
+        static string execPreCmd;
+
         static string logsPath = "";
         static bool use_showwindow;
         static bool as_service;
@@ -49,7 +51,7 @@ namespace Dispatcher {
             envs = new Dictionary<string, string>();
             envs["PATH"] = Environment.GetEnvironmentVariable("PATH");
 
-            if (!ExtractCommandLine(out exePath, out args, out use_showwindow, out as_service, out as_desktop_user, out use_job, envs, out cwd))
+            if (!ExtractCommandLine())
                 Environment.Exit(1);
 
             string exeDir = Path.GetDirectoryName(exePath);
@@ -75,6 +77,15 @@ namespace Dispatcher {
 
             if (as_desktop_user)
             {
+                if(execPreCmd != null) {
+                    pInfo = ProcessExtensions.StartProcessAsCurrentUser(execPreCmd, envs, "", cwd, !use_showwindow);
+                    Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+                    Kernel32.CloseHandle(pInfo.hThread);
+                    Kernel32.CloseHandle(pInfo.hProcess);
+                }
+
+
+
                 pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow);
 
                 if (use_job)
@@ -98,6 +109,16 @@ namespace Dispatcher {
               job.AddProcess(Process.GetCurrentProcess().Handle);
             }
 
+
+          if(execPreCmd != null) {
+            var startInfo = new ProcessStartInfo(execPreCmd);
+            startInfo.WorkingDirectory = cwd;
+
+            using (Process exeProcess = Process.Start(startInfo))
+             {
+                  exeProcess.WaitForExit();
+              }
+          }
 
 
             pInfo = new PROCESS_INFORMATION();
@@ -153,7 +174,7 @@ namespace Dispatcher {
             Kernel32.CloseHandle(iStdIn);
         }
 
-        private static bool ExtractCommandLine(out string exePath, out string args, out bool use_showwindow, out bool as_service, out bool as_desktop_user, out bool use_job, Dictionary<string, string> envs, out string cwd) {
+        private static bool ExtractCommandLine() {
             string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
             string dispatcher_dir = Path.GetDirectoryName(dispatcher);
             cwd = null; //inherit
@@ -212,9 +233,11 @@ namespace Dispatcher {
                 value = Replace(value, replaces);
                 value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
-                    args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
+                    args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$") ? value : "\"" + value + "\"") + " ";
                 if (key.StartsWith("ENV_"))
                     envs[key.Remove(0, 4)] = value;
+                if (key == "PRESTART_CMD")
+                    execPreCmd = value;
                 if (key == "CWD")
                     cwd = value;
                 if (key == "AS_SERVICE")
@@ -230,7 +253,7 @@ namespace Dispatcher {
 
             for(var i = 1; i < argv.Length; i++) {
                 string value = argv[i];
-                args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,-]+$") ? value : "\"" + value + "\"") + " ";
+                args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$") ? value : "\"" + value + "\"") + " ";
             }
 
             return true;
