@@ -49,13 +49,13 @@ namespace Dispatcher {
             Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
             envs = new Dictionary<string, string>();
-            envs["PATH"] = Environment.GetEnvironmentVariable("PATH");
+            envs["Path"] = Environment.GetEnvironmentVariable("PATH");
 
             if (!ExtractCommandLine())
                 Environment.Exit(1);
 
             string exeDir = Path.GetDirectoryName(exePath);
-            envs["PATH"] = envs["PATH"] + ";" + exeDir;
+            envs["Path"] = envs["Path"] + ";" + exeDir;
 
             foreach (KeyValuePair<string, string> env in envs)
                 Environment.SetEnvironmentVariable(env.Key, env.Value);
