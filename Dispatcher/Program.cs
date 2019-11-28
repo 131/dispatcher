@@ -78,7 +78,7 @@ namespace Dispatcher {
             if (as_desktop_user)
             {
                 if(execPreCmd != null) {
-                    pInfo = ProcessExtensions.StartProcessAsCurrentUser(execPreCmd, envs, "", cwd, !use_showwindow);
+                    pInfo = ProcessExtensions.StartProcessAsCurrentUser(execPreCmd, envs, "", cwd, !use_showwindow, logsPath);
                     Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
                     Kernel32.CloseHandle(pInfo.hThread);
                     Kernel32.CloseHandle(pInfo.hProcess);
@@ -86,7 +86,7 @@ namespace Dispatcher {
 
 
 
-                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow);
+                pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow, logsPath);
 
                 if (use_job)
                 {
@@ -110,15 +110,15 @@ namespace Dispatcher {
             }
 
 
-          if(execPreCmd != null) {
-            var startInfo = new ProcessStartInfo(execPreCmd);
-            startInfo.WorkingDirectory = cwd;
+            if(execPreCmd != null) {
+              var startInfo = new ProcessStartInfo(execPreCmd);
+              startInfo.WorkingDirectory = cwd;
 
-            using (Process exeProcess = Process.Start(startInfo))
-             {
-                  exeProcess.WaitForExit();
-              }
-          }
+              using (Process exeProcess = Process.Start(startInfo))
+               {
+                    exeProcess.WaitForExit();
+                }
+            }
 
 
             pInfo = new PROCESS_INFORMATION();

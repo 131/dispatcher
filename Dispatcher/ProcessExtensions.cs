@@ -250,7 +250,7 @@ namespace murrayju.ProcessExtensions
 
 
     internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs,
-            string args = "", string workDir = null, bool visible = true)
+            string args = "", string workDir = null, bool visible = true, string logsPath = null)
         {
             var hUserToken = IntPtr.Zero;
             var startInfo = new STARTUPINFO();
@@ -262,6 +262,7 @@ namespace murrayju.ProcessExtensions
             string cmdLine = "\"" + appPath + "\" " + args;
 
             startInfo.cb = Marshal.SizeOf(typeof(STARTUPINFO));
+            IntPtr hLogs = IntPtr.Zero;
 
             try
             {
@@ -275,6 +276,19 @@ namespace murrayju.ProcessExtensions
 
                 startInfo.wShowWindow = (short)(visible ? SW.SW_SHOW : SW.SW_HIDE);
                 startInfo.lpDesktop = "winsta0\\default";
+                startInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
+
+                if (!String.IsNullOrEmpty(logsPath)) {
+                    SECURITY_ATTRIBUTES lpSecurityAttributes = new SECURITY_ATTRIBUTES();
+                    lpSecurityAttributes.bInheritHandle = 1;
+                    lpSecurityAttributes.nLength = Marshal.SizeOf(lpSecurityAttributes);
+                    hLogs = Kernel32.CreateFile(logsPath, Kernel32.DesiredAccess.FILE_APPEND_DATA, 0x00000003 //share read& w
+                    , lpSecurityAttributes, Kernel32.CreationDisposition.OPEN_ALWAYS, 0, IntPtr.Zero);
+
+                    startInfo.hStdOutput = hLogs;
+                    startInfo.hStdError = hLogs;
+                }
+
 
                 if (!CreateEnvironmentBlock(ref pEnv, hUserToken, false))
                 {
@@ -302,7 +316,7 @@ namespace murrayju.ProcessExtensions
                     cmdLine, // Command Line
                     IntPtr.Zero,
                     IntPtr.Zero,
-                    false,
+                    true,
                     dwCreationFlags,
                     envdst,
                     workDir, // Working directory
@@ -320,6 +334,8 @@ namespace murrayju.ProcessExtensions
             {
 
                 CloseHandle(hUserToken);
+
+
                 if (pEnv != IntPtr.Zero)
                 {
                     DestroyEnvironmentBlock(pEnv);
