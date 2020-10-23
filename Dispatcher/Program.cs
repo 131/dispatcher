@@ -10,6 +10,7 @@ using Utils;
 using System.ServiceProcess;
 using System.Runtime.InteropServices;
 using murrayju.ProcessExtensions;
+using System.Xml;
 
 namespace Dispatcher {
 
@@ -182,17 +183,7 @@ namespace Dispatcher {
             as_desktop_user = false;
             use_job = true;
 
-            //ConfigurationManager.AppSettings do not expand exe short name (e.g. search for a missing C:\windows\system32\somelo~1.config file)
-
-            KeyValueConfigurationCollection config = new KeyValueConfigurationCollection();
-
-            if (ConfigurationManager.AppSettings["PATH"] != null) {
-                foreach (string key in ConfigurationManager.AppSettings)
-                    config.Add(key, ConfigurationManager.AppSettings[key]);
-            } else {
-                config = ConfigurationManager.OpenExeConfiguration(dispatcher).AppSettings.Settings;
-            }
-
+            
             args = String.Empty;
 
 #if DISPACHER_WIN
@@ -200,16 +191,18 @@ namespace Dispatcher {
 #else
             use_showwindow = true;
 #endif
+            var config = ConfigurationParser.loadConfig();
 
-            exePath = config["PATH"].Value;
-
-            if (config[FLAG_USE_SHOWWINDOW] != null)
-                use_showwindow = !(config[FLAG_USE_SHOWWINDOW].Value == "0" || config[FLAG_USE_SHOWWINDOW].Value == "");
-
-            if (String.IsNullOrEmpty(exePath)) {
+            if (!config.ContainsKey("PATH"))
+            {
                 Console.Error.WriteLine("Cannot resolve cmd");
                 return false;
             }
+            if (config.ContainsKey(FLAG_USE_SHOWWINDOW))
+                use_showwindow = toBool(config[FLAG_USE_SHOWWINDOW]);
+
+
+            exePath = config["PATH"];
 
             string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
@@ -227,9 +220,11 @@ namespace Dispatcher {
                 {"%s%", DateTime.Now.ToString("ss")},
             };
 
-            
-            foreach (string key in config.AllKeys) {
-                string value = config[key].Value;
+            List<string> keys = new List<string>(config.Keys);
+            keys.Sort();
+
+            foreach (string key in keys) {
+                string value = config[key];
                 value = Replace(value, replaces);
                 value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
@@ -247,7 +242,7 @@ namespace Dispatcher {
                 } if (key == "OUTPUT")
                     logsPath = value;
                 if(key == "USE_JOB")
-                    use_job = ! isFalse(value);
+                    use_job = toBool(value);
             }
             var argv = System.Environment.GetCommandLineArgs();
 
@@ -264,8 +259,8 @@ namespace Dispatcher {
             return str;
         }
 
-        public static bool isFalse(string str) {
-          return String.IsNullOrEmpty(str) || str == "false" || str == "0";
+        public static bool toBool(string str) {
+          return !(String.IsNullOrEmpty(str) || str == "false" || str == "0");
         }
         
         
@@ -276,6 +271,52 @@ namespace Dispatcher {
 
     }
 
+
+    public class ConfigurationParser
+    {
+        public static Dictionary<string, string> loadConfig()
+        {
+            Dictionary<string, string> config = new Dictionary<string, string>();
+
+            string dispatcher_path = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
+            string dispatcher_dir = Path.GetDirectoryName(dispatcher_path);
+            string dispatcher_name = Path.GetFileNameWithoutExtension(dispatcher_path);
+
+            List<string> files = new List<string>();
+            files.Add(Path.Combine(dispatcher_dir, dispatcher_name + ".config"));
+            files.Add(Path.Combine(dispatcher_dir, dispatcher_name + ".exe.config"));
+
+            string dispatcher_conf = Path.Combine(dispatcher_dir, dispatcher_name + ".config.d");
+            if (Directory.Exists(dispatcher_conf))
+            {
+                string[] dirs = Directory.GetFiles(dispatcher_conf, "*.config");
+                foreach (string file in dirs)
+                    files.Add(Path.GetFullPath(file));
+            }
+
+            foreach (string config_file in files)
+            {
+                try
+                {
+                    if (!File.Exists(config_file))
+                        continue;
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(config_file);
+                    XmlNodeList nodeList;
+                    XmlNode root = doc.DocumentElement;
+                    nodeList = root.SelectNodes("/configuration/appSettings/add[@key][@value]");
+                    //Change the price on the books.
+                    foreach (XmlNode addd in nodeList)
+                        config[addd.Attributes["key"].Value] = addd.Attributes["value"].Value;
+                }
+                catch { }
+            }
+
+
+            return config;
+        }
+
+    }
 
     public class Service1 : ServiceBase {
 

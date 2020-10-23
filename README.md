@@ -150,6 +150,14 @@ Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modif
 ```
 
 
+## Configuration lookup path
+dispatcher will lookup for configurations directives in
+
+* if existing `[dispatched].config` (xml file)
+* if existing `[dispatched].exe.config`  (xml file)
+* all matching `[dispatched_directory]/[dispatched].config.d/*.config`  (xml files)
+
+Any directive defined multipled time will be overrided with the latest value
 
 
 
@@ -165,6 +173,8 @@ Create to dispatcher (php5.exe & php7.exe)
 
 ## Make a portable binary out of any shell/script 
 Using dispatcher.exe is a nifty way to create portable binaries out of shell scripts (.bat,.js,.php)
+
+
 
 
 # How does it works
