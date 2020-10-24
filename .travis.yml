@@ -8,7 +8,7 @@ matrix:
     - powershell Install-WindowsFeature Net-Framework-Core
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
     install:
-    - cmd.exe /c "call make.bat"
+    - make.bat
     script: skip     #skip tests 
     deploy:
       provider: releases
