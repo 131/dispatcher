@@ -9,17 +9,17 @@ matrix:
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
     install:
     - cmd.exe "/c make.bat"
-    script: skip     #skip tests 
+    script: skip
     deploy:
       provider: releases
       api_key:
-         secure: $GITHUB_TOKEN
+        secure: "$GITHUB_TOKEN"
       file:
-         - dispatcher_cmd.exe
-         - dispatcher_cmd_x64.exe
-         - dispatcher_win.exe
-         - dispatcher_win_x64.exe
+      - dispatcher_cmd.exe
+      - dispatcher_cmd_x64.exe
+      - dispatcher_win.exe
+      - dispatcher_win_x64.exe
       skip_cleanup: true
       on:
-         tags: true
-
+        repo: 131/dispatcher
+        tags: true

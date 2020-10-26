@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/131/dispatcher.svg?branch=master)](https://travis-ci.org/131/dispatcher)
+[![Build Status](https://travis-ci.com/131/dispatcher.svg?branch=master)](https://travis-ci.com/131/dispatcher)
 [![Version](https://img.shields.io/github/v/release/131/dispatcher)](https://github.com/131/dispatcher/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
