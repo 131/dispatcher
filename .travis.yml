@@ -12,8 +12,7 @@ jobs:
     script: skip
     deploy:
       provider: releases
-      token:
-        secure: jNT4wqlmusRPocS464WaQ3qoUJevFt9T10E4lJMBaKdB1cmh29Ium/4oOFMxOg6PZRZDPSlsbjToYwEcoOz/RdNs5/K3gh4lZRsHF5Y3Z6oMCIwz77nUxbgfxh/JLRCSlIpHWzYPA0opi0jNn7kr8wwqLqeCQFm7VsBYJCTPL8peBW/U9iqQGh1IBlXhHPGRAeSjomv4Jt76j36xCmG8Tff7MnIjkn0qkKjS6eG4oH461MllzUyXpmjfvzxm560L87+t/aiS766Uola2bmMwLLOXuEKtYjXoHfBVTFvNun1UhHNEBqmSwxyX7b0hsCsifYXjSHis5h67xjOhpeFI6ECz5mZ/f9gyXtmHfKqKQZ+ZVkAmtV1+Qx/bCcQpS1GgoS6hnDGVQADRjtFYHiz9s+iPbOQTYnruGu2t7wjFuuUU1ByjD9nXYltqTVSMtFmMHNMA5LdBAU4m3WYZS85Xj69Hp/trZEyGxdnOymq3DdaUOn5qrYGxQXKokK0+wDscjk9Yv54XzeQIuI8e+xyxxaHBkf9xWGaPRVnvi4wTyB2XwzjSqCQ0Q5Tw908RVgsK/BHziGKsrK4MefT0k2wjrre4J4NWl1NundunlmBtjqCEAwHrZDtYBsrmgx/p5h8Ede5rdzlAQ5ggMVHswc2jnkgZ3tCcat3L2ZdG2qflvRU=
+      token: "$GITHUB_TOKEN"
       file:
       - dispatcher_cmd.exe
       - dispatcher_cmd_x64.exe
