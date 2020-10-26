@@ -13,6 +13,7 @@ jobs:
     deploy:
       provider: releases
       token: "$GITHUB_TOKEN"
+      skip_cleanup: true
       file:
       - dispatcher_cmd.exe
       - dispatcher_cmd_x64.exe
