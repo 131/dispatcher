@@ -1,5 +1,7 @@
 "use strict";
 
+const fs = require('fs');
+const path = require('path');
 const spawn = require('child_process').spawn;
 
 const drain = require('nyks/stream/drain');
@@ -24,19 +26,20 @@ describe("Initial test suite", function(){
 
   it("Should forward stdout", async () => {
       let tmp = new mock();
-      cleanups.push(tmp);
 
       let child = spawn(tmp.execPath, ['-p', '1+2']);
       let [exit, stdout] = await Promise.all([wait(child), drain(child.stdout)]);
       let body = String(stdout);
 
       expect(body).to.eql("3\n");
+
+
+      cleanups.push(tmp);
   });
 
 
   it("Should forward stderr", async () => {
       let tmp = new mock();
-      cleanups.push(tmp);
 
       let child = spawn(tmp.execPath, ['-e', "console.error(42)"]);
       let [exit, stdout, stderr] = await Promise.all([wait(child), drain(child.stdout), drain(child.stderr)]);
@@ -45,6 +48,9 @@ describe("Initial test suite", function(){
 
       expect(stdout).to.eql("");
       expect(stderr).to.eql("42\n");
+
+
+      cleanups.push(tmp);
   });
 
 
@@ -52,7 +58,6 @@ describe("Initial test suite", function(){
 
   it("Should escape args", async () => {
       let tmp = new mock();
-      cleanups.push(tmp);
 
       let args = ["42", "", " ", "The sun is shinning", "Ho I' <", 'With a quoted " '];
       let child = spawn(tmp.execPath, ["-p", "JSON.stringify(process.argv.slice(1))", ...args]);
@@ -62,6 +67,8 @@ describe("Initial test suite", function(){
 
       expect(stdout).to.eql(JSON.stringify(args) + "\n");
       expect(stderr).to.eql("");
+
+      cleanups.push(tmp);
   });
 
 
@@ -75,6 +82,8 @@ describe("Initial test suite", function(){
       let dict = l.reduce((acc, val, k) => (acc[`ARGV${k}`] = val, acc), {});
 
       let tmp = new mock(dict);
+
+
       let child = spawn(tmp.execPath, args2);
       let [exit, stdout, stderr] = await Promise.all([wait(child), drain(child.stdout), drain(child.stderr)]);
       stdout = String(stdout);
@@ -82,14 +91,15 @@ describe("Initial test suite", function(){
 
       expect(stdout).to.eql(JSON.stringify([...args, ...args2]) + "\n");
       expect(stderr).to.eql("");
-      //cleanups.push(tmp);
+
+
+      cleanups.push(tmp);
   });
 
 
 
   it("Should forward args", async () => {
       let tmp = new mock({ARGV4 : "JSON.stringify(process.argv.slice(1))", ARGV0 : '-p'});
-      cleanups.push(tmp);
 
       let args = ["42", "", " ", "The sun is shinning", "Ho I' <", 'With a quoted " '];
       let child = spawn(tmp.execPath, args);
@@ -99,6 +109,8 @@ describe("Initial test suite", function(){
 
       expect(stdout).to.eql(JSON.stringify(args) + "\n");
       expect(stderr).to.eql("");
+
+      cleanups.push(tmp);
   });
 
 
@@ -107,7 +119,6 @@ describe("Initial test suite", function(){
   it("Should configure ENV", async () => {
       let ENV_FOOBAR = "ok boomer";
       let tmp = new mock({ARGV4 : "process.env.FOOBAR", ARGV0 : '-p', ENV_FOOBAR});
-      cleanups.push(tmp);
 
       let child = spawn(tmp.execPath);
       let [exit, stdout, stderr] = await Promise.all([wait(child), drain(child.stdout), drain(child.stderr)]);
@@ -116,7 +127,44 @@ describe("Initial test suite", function(){
 
       expect(stdout).to.eql(`${ENV_FOOBAR}\n`);
       expect(stderr).to.eql("");
+
+
+      cleanups.push(tmp);
   });
+
+
+  it("Should configure cwd", async () => {
+      let tmp = new mock({CWD: "%dwd%"});
+
+      let child = spawn(tmp.execPath, ["-p", "process.cwd()"]);
+      let [exit, stdout, stderr] = await Promise.all([wait(child), drain(child.stdout), drain(child.stderr)]);
+      stdout = String(stdout);
+      stderr = String(stderr);
+
+      expect(stdout).to.eql(`${tmp.wd}\n`);
+      expect(stderr).to.eql("");
+
+      cleanups.push(tmp);
+  });
+
+
+  it("Should configure output logs", async () => {
+      let tmp = new mock({OUTPUT : "%dwd%\\test.log"});
+
+      let child = spawn(tmp.execPath, ["-e", "console.error(42)"]);
+      let [exit, stdout, stderr] = await Promise.all([wait(child), drain(child.stdout), drain(child.stderr)]);
+      stdout = String(stdout);
+      stderr = String(stderr);
+
+      let challenge = fs.readFileSync(path.join(tmp.wd, 'test.log'), "utf-8");
+      expect(stdout).to.eql("");
+      expect(stderr).to.eql("");
+      expect(challenge).to.eql("42\n");
+
+
+      cleanups.push(tmp);
+  });
+
 
 
 });
@@ -133,7 +181,6 @@ describe("Jobs tests suite", function() {
 
   it("should kill main process on subchild exit", async () => {
       let tmp = new mock();
-      cleanups.push(tmp);
 
       let main = spawn(tmp.execPath, ['-e', "setInterval(a=>0, 1000)"]);
 
@@ -142,12 +189,13 @@ describe("Jobs tests suite", function() {
 
       process.kill(dispatched.ProcessId);
       let end = await new Promise(resolve => main.on('exit', resolve));
+
+      cleanups.push(tmp);
   });
 
 
   it("should kill child on dispatched exit (with job)", async () => {
       let tmp = new mock();
-      cleanups.push(tmp);
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
 
@@ -158,13 +206,14 @@ describe("Jobs tests suite", function() {
       let after = await getProcessList();
       let dispatchedAfter = after.find(line => line.ProcessId == dispatched.processId)
       expect(dispatchedAfter).to.eql(undefined);
+
+      cleanups.push(tmp);
   });
 
 
 
   it("should preserve child on dispatched exit (without job)", async () => {
       let tmp = new mock({USE_JOB : "false"});
-      //cleanups.push(tmp);
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
 
@@ -176,6 +225,9 @@ describe("Jobs tests suite", function() {
       let dispatchedAfter = after.find(line => line.ProcessId == dispatched.ProcessId)
       expect(dispatchedAfter).to.eql(dispatched);
       process.kill(dispatchedAfter.ProcessId);
+
+
+      cleanups.push(tmp);
   });
 
 

@@ -31,7 +31,7 @@ async function getProcessList() {
 
 class mock {
 
-  constructor(lines = {}, dispatcher = "dispatcher_cmd.exe") {
+  constructor(lines = {}, dispatcher = "dispatcher_cmd_x64.exe") {
 
     const dispatcher_path = path.resolve("..", dispatcher);
 

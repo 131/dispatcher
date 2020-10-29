@@ -12,7 +12,7 @@ Powerful process forwarder (or proxy) for Windows. It can be considered as a ope
 
 # How to use
 Rename/duplicate `dispatcher.exe` to `[something].exe`.
-Write a `[something].exe.config` file next to it to configure redirection.
+Write a `[something].config` file next to it to configure redirection.
 
 Configuration file syntax is :
 ```
@@ -138,6 +138,8 @@ Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service complia
 
 ## Redirect output to a file (usefull for services)
 Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modifiers are available.
+You might want to use x64 bits version of the dispatcher to get the output redirection working.
+
 ```
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
