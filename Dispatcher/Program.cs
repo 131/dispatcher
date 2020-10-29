@@ -226,7 +226,7 @@ namespace Dispatcher {
                 value = Replace(value, replaces);
                 value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
-                    args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$") ? value : "\"" + value + "\"") + " ";
+                    args += EncodeParameterArgument(value) + " ";
                 if (key.StartsWith("ENV_"))
                     envs[key.Remove(0, 4)] = value;
                 if (key == "PRESTART_CMD")
@@ -246,7 +246,7 @@ namespace Dispatcher {
 
             for(var i = 1; i < argv.Length; i++) {
                 string value = argv[i];
-                args += (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$") ? value : "\"" + value + "\"") + " ";
+                args += EncodeParameterArgument(value) + " ";
             }
 
             return true;
@@ -261,8 +261,22 @@ namespace Dispatcher {
           return !(String.IsNullOrEmpty(str) || str == "false" || str == "0");
         }
         
-        
-        
+
+
+      public static string EncodeParameterArgument(string value)
+      {
+          if(String.IsNullOrEmpty(value))
+              return "\"\"";
+
+          if(Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$"))
+            return value;
+
+          value = Regex.Replace(value, @"(\\*)" + "\"", @"$1\$0");
+          value = Regex.Replace(value, @"^(.*\s.*?)(\\*)$", "\"$1$2$2\"");
+          return value;
+      }
+
+
 
 
 
