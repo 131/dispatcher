@@ -1,12 +1,13 @@
 {
-  "name": "dispatcher-tests",
+  "name": "dispatcher",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.25.4",
   "description": "tests suite for dispatcher",
   "main": "index.js",
   "scripts": {
     "test": "npm run mocha",
-    "mocha": "node node_modules/mocha/bin/_mocha -b index.js"
+    "mocha": "node node_modules/mocha/bin/_mocha -b",
+    "version": "sed -Ei -e \"s/(AssemblyVersion|AssemblyFileVersion)\\(.*?\\)/\\1(\\\"${npm_package_version}.0\\\")/\" src/Properties/AssemblyInfo.cs && git add -A src/Properties/AssemblyInfo.cs"
   },
   "author": "",
   "license": "ISC",

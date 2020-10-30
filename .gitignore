@@ -1,7 +1,5 @@
-*.user
-*.suo
-/Dispatcher/bin
-/Dispatcher/obj
 /*.exe
-deploy.bat
-*.vs
+/npm-debug.log
+/node_modules
+/coverage
+/disc

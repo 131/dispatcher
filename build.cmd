@@ -9,12 +9,12 @@
 @set exe_64_elevated=dispatcher_cmd_x64_uac.exe
 
 
-@set elevate=/win32manifest:Dispatcher\elevate.manifest
+@set elevate=/win32manifest:src\elevate.manifest
 del %win% %exe% %win_64% %exe_64% %win_elevated% %exe_elevated% %win_64_elevated% %exe_64_elevated%
 
 @set csc=Csc.exe
 @set args=/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0  /errorendlocation /preferreduilang:en-US /highentropyva- /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.Xml.dll /reference:C:\Windows\Microsoft.NET\Framework\v2.0.50727\System.ServiceProcess.dll /filealign:512 /utf8output 
-@set files=Dispatcher\Utils\Job.cs Dispatcher\Utils\Kernel32.cs Dispatcher\Program.cs Dispatcher\Properties\AssemblyInfo.cs Dispatcher\ProcessExtensions.cs
+@set files=src\Utils\Job.cs src\Utils\Kernel32.cs src\Program.cs src\Properties\AssemblyInfo.cs src\ProcessExtensions.cs
 
 
 
@@ -24,8 +24,6 @@ del %win% %exe% %win_64% %exe_64% %win_elevated% %exe_elevated% %win_64_elevated
 %csc%  %args% /platform:x64 /define:DISPACHER_WIN /out:%win_64%  /target:winexe %files%
 %csc%  %args% /platform:x64 /out:%exe_64%  /target:exe %files%
 
-
-dir
 
 
 

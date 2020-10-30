@@ -1,22 +1,20 @@
+git:
+  autocrlf: false
 jobs:
   include:
   - os: windows
     language: node_js
-    node_js:
-    - 8
-    before_install:
+    node_js: 8
+    install:
     - powershell Install-WindowsFeature Net-Framework-Core
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
-    install:
-    - cmd.exe "/c make.bat"
     script:
-    - cd tests
-    - npm install && npm ls
-    - npm test
+    - cmd.exe "/c build_and_test.cmd"
     deploy:
+      cleanup: false
+      verbose: true
       provider: releases
       token: "$GITHUB_TOKEN"
-      skip_cleanup: true
       file:
       - dispatcher_cmd.exe
       - dispatcher_cmd_x64.exe

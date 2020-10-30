@@ -33,7 +33,7 @@ class mock {
 
   constructor(lines = {}, dispatcher = "dispatcher_cmd_x64.exe") {
 
-    const dispatcher_path = path.resolve("..", dispatcher);
+    const dispatcher_path = path.resolve(__dirname, "..", dispatcher);
 
     const wd = tmppath();
     mkdirpSync(wd);
