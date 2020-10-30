@@ -1,9 +1,11 @@
 {
-  "name": "tests",
+  "name": "dispatcher-tests",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
+  "description": "tests suite for dispatcher",
   "main": "index.js",
   "scripts": {
+    "test": "npm run mocha",
     "mocha": "node node_modules/mocha/bin/_mocha -b index.js"
   },
   "author": "",

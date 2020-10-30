@@ -184,7 +184,12 @@ describe("Jobs tests suite", function() {
 
       let main = spawn(tmp.execPath, ['-e', "setInterval(a=>0, 1000)"]);
 
+      if(process.env.CI)
+        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
+
       let foo = await getProcessList();
+
+
       let dispatched = foo.find(line => line.ParentProcessId == main.pid)
 
       process.kill(dispatched.ProcessId);
@@ -198,6 +203,8 @@ describe("Jobs tests suite", function() {
       let tmp = new mock();
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
+      if(process.env.CI)
+        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
 
       let before = await getProcessList();
       let dispatched = before.find(line => line.ParentProcessId == main.pid)
@@ -216,6 +223,8 @@ describe("Jobs tests suite", function() {
       let tmp = new mock({USE_JOB : "false"});
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
+      if(process.env.CI)
+        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
 
       let before = await getProcessList();
       let dispatched = before.find(line => line.ParentProcessId == main.pid)

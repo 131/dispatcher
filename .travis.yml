@@ -9,7 +9,10 @@ jobs:
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
     install:
     - cmd.exe "/c make.bat"
-    script: skip
+    script:
+    - cd tests
+    - npm install && npm ls
+    - npm test
     deploy:
       provider: releases
       token: "$GITHUB_TOKEN"
