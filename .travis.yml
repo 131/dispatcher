@@ -11,7 +11,7 @@ jobs:
     script:
     - cmd.exe "/c build_and_test.cmd"
     deploy:
-      cleanup: false
+      skip_cleanup: true
       verbose: true
       provider: releases
       token: "$GITHUB_TOKEN"
