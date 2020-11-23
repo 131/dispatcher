@@ -151,6 +151,29 @@ You might want to use x64 bits version of the dispatcher to get the output redir
 </configuration>
 ```
 
+# Service restart policy
+In service mode, dispatcher will restart your process every time it exit, with an exponential (pow 2) backoff delay. 
+
+
+## SERVICE_RESTART_ON_NETWORK_CHANGE
+Dispatcher can monitor network interface status change.
+Use the `SERVICE_RESTART_ON_NETWORK_CHANGE` flag to reset the backoff delay.
+
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="PATH" value="node.exe"/>
+    <add key="ARGV0" value="main.js"/>
+    <add key="AS_SERVICE" value="true"/>
+
+    <add key="SERVICE_RESTART_ON_NETWORK_CHANGE" value="true"/>
+  </appSettings>
+</configuration>
+```
+
+
+
 
 ## Configuration lookup path
 dispatcher will lookup for configurations directives in

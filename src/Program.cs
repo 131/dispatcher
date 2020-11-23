@@ -9,6 +9,8 @@ using System.ServiceProcess;
 using System.Runtime.InteropServices;
 using murrayju.ProcessExtensions;
 using System.Xml;
+using System.Net.NetworkInformation;
+using System.Net;
 
 namespace Dispatcher {
 
@@ -36,10 +38,13 @@ namespace Dispatcher {
         static bool as_service;
         static bool as_desktop_user;
         static bool use_job;
+        public static bool restart_on_network_change;
+
         static uint exitCode;
         static Dictionary<string, string> envs;
 
         internal  static PROCESS_INFORMATION pInfo;
+
 
 
         static void Main()
@@ -154,6 +159,7 @@ namespace Dispatcher {
             uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT;
             if (!use_job)
                 dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
+  
 
             Kernel32.CreateProcess(
                 null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
@@ -180,8 +186,8 @@ namespace Dispatcher {
             as_service = false;
             as_desktop_user = false;
             use_job = true;
+            restart_on_network_change = false;
 
-            
             args = String.Empty;
 
 #if DISPACHER_WIN
@@ -235,6 +241,8 @@ namespace Dispatcher {
                     cwd = value;
                 if (key == "AS_SERVICE")
                     as_service = true;
+                if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
+                    restart_on_network_change = true;
                 if (key == "AS_DESKTOP_USER") {
                     as_desktop_user = true;
                 } if (key == "OUTPUT")
@@ -333,21 +341,41 @@ namespace Dispatcher {
     public class Service1 : ServiceBase {
 
         protected Thread t;
+        private static int delay = 1000;
+
+        private static object block = new object();
+
+        static void AddressChangedCallback(object sender, EventArgs e)
+        {
+            lock (block) 
+            {
+                Thread.Sleep(1500); //wait for network interface to be ready
+                Monitor.PulseAll(block);
+            }
+            delay = 1000;
+        }
+
         protected override void OnStart(string[] args)
         {
-
             t = new Thread(() => Run());
             t.Start();
+
+            if(Program.restart_on_network_change)
+                NetworkChange.NetworkAddressChanged += new NetworkAddressChangedEventHandler(AddressChangedCallback);
         }
         protected void Run()
         {
-          int delay = 1000;
-          while(true) {
-            Program.Run();
-            Thread.Sleep(delay);
-            delay = delay * 2;
-          }
+            lock (block)
+            {
+                while (true)
+                {
+                    Program.Run();
+                    Monitor.Wait(block, delay);
+                    delay = delay * 2;
+                }
+            }
         }
+
 
         protected override void OnStop()
         {
