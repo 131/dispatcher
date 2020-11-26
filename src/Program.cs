@@ -99,9 +99,9 @@ namespace Dispatcher {
                 }
 
                 Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+                Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
                 Kernel32.CloseHandle(pInfo.hThread);
                 Kernel32.CloseHandle(pInfo.hProcess);
-                Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
                 return;
             }
 
