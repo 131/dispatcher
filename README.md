@@ -94,6 +94,20 @@ You can define custom env var in dispatcher.config
 
 
 
+## DETACHED flag
+When using dispatcher_win, you can use the `DETACHED` flag for the dispatcher NOT to wait for the child to exit.
+
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="PATH" value="putty.exe"/>
+    <add key="DETACHED" value="true"/>
+  </appSettings>
+</configuration>
+```
+
+
 ## spawn a command line app with no window (WSL bash.exe)
 If you dispatch a console app (e.g. WSL bash.exe) from a desktop app (i.e. dispatch_win_x64.exe) you'll hide the window
 

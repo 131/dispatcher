@@ -188,8 +188,7 @@ describe("Jobs tests suite", function() {
 
       let main = spawn(tmp.execPath, ['-e', "setInterval(a=>0, 1000)"]);
 
-      if(process.env.CI)
-        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
+      console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
 
       let foo = await getProcessList();
 
@@ -207,8 +206,7 @@ describe("Jobs tests suite", function() {
       let tmp = new mock();
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
-      if(process.env.CI)
-        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
+      console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
 
       let before = await getProcessList();
       let dispatched = before.find(line => line.ParentProcessId == main.pid)
@@ -227,8 +225,7 @@ describe("Jobs tests suite", function() {
       let tmp = new mock({USE_JOB : "false"});
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
-      if(process.env.CI)
-        console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
+      console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
 
       let before = await getProcessList();
       let dispatched = before.find(line => line.ParentProcessId == main.pid)
@@ -248,7 +245,20 @@ describe("Jobs tests suite", function() {
 
 
 
-describe("Service tests suite", function() {
+let service = describe;
+
+try {
+  fs.utimesSync(process.env.SystemRoot, new Date(), new Date());
+} catch(err) {
+  if(err.code == 'EPERM') {
+      console.log("Skipping suite as running as NON elevated process");
+      service = describe.skip;
+   }
+}
+
+
+service("Service tests suite", function() {
+
   let cleanups = [];
   this.timeout(60 * 1000);
   let port = 0;

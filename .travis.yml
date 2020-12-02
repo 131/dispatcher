@@ -9,7 +9,7 @@ jobs:
     - powershell Install-WindowsFeature Net-Framework-Core
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
     script:
-    - cmd.exe "/c build_and_test.cmd"
+    - ./build test
     deploy:
       skip_cleanup: true
       verbose: true

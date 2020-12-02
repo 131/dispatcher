@@ -38,10 +38,18 @@ namespace Dispatcher {
         static bool as_service;
         static bool as_desktop_user;
         static bool use_job;
+        static bool detached;
+#if DISPACHER_WIN
+        static bool DISPACHER_WIN = true;
+#else
+        static bool DISPACHER_WIN = false;
+#endif
+
         public static bool restart_on_network_change;
 
         static uint exitCode;
         static Dictionary<string, string> envs;
+
 
         internal  static PROCESS_INFORMATION pInfo;
 
@@ -107,7 +115,7 @@ namespace Dispatcher {
 
 
             //make sure dispatcher kill its child process when killed
-            if (use_job)
+            if (use_job && !detached)
             {
               var job = new Job();
               job.AddProcess(Process.GetCurrentProcess().Handle);
@@ -128,6 +136,10 @@ namespace Dispatcher {
             pInfo = new PROCESS_INFORMATION();
             var sInfoEx = new STARTUPINFOEX();
             sInfoEx.StartupInfo = new STARTUPINFO();
+            sInfoEx.StartupInfo.cb = Marshal.SizeOf(sInfoEx);
+
+            IntPtr lpValue = IntPtr.Zero;
+
 
             sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
 
@@ -156,19 +168,58 @@ namespace Dispatcher {
                 sInfoEx.StartupInfo.hStdError = hLogs;
             }
 
+
             uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT;
+            dwCreationFlags |= Kernel32.EXTENDED_STARTUPINFO_PRESENT;
+
+            if(detached)
+              dwCreationFlags |= Kernel32.DETACHED_PROCESS;
+
             if (!use_job)
                 dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
-  
+
+
+            IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
+            SetParent(parentHandle, ref sInfoEx, ref lpValue);
+
 
             Kernel32.CreateProcess(
-                null, exePath + " " + args, IntPtr.Zero, IntPtr.Zero, true,
-                dwCreationFlags,
-                IntPtr.Zero, cwd, ref sInfoEx, out pInfo);
+                null,                 // No module name (use command line)
+                exePath + " " + args, // command line
+                IntPtr.Zero,          // Process handle not inheritable
+                IntPtr.Zero,          // Thread handle not inheritable
+                true,                // Set handle inheritance
+
+                dwCreationFlags,     // creation flags
+                IntPtr.Zero,         // Use parent's environment block
+                cwd,                 // Use parent's starting directory 
+                ref sInfoEx,         // Pointer to STARTUPINFO structure
+                out pInfo            // Pointer to PROCESS_INFORMATION structure
+            );
+
+
+            if (sInfoEx.lpAttributeList != IntPtr.Zero)
+            {
+                Kernel32.DeleteProcThreadAttributeList(sInfoEx.lpAttributeList);
+                Marshal.FreeHGlobal(sInfoEx.lpAttributeList);
+            }
+
+            if(lpValue != IntPtr.Zero) {
+              Marshal.FreeHGlobal(lpValue);
+            }
+
+            if(detached) {
+              Kernel32.CloseHandle(pInfo.hThread);
+              Kernel32.CloseHandle(pInfo.hProcess);
+              return;
+            }
 
             Kernel32.CloseHandle(pInfo.hThread);
             Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
             Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
+
+
+    
 
             //clean up
             if(hLogs != IntPtr.Zero)
@@ -179,6 +230,34 @@ namespace Dispatcher {
             Kernel32.CloseHandle(iStdIn);
         }
 
+        private static bool SetParent(IntPtr parentHandle, ref STARTUPINFOEX sInfoEx, ref IntPtr lpValue){
+            var lpSize = IntPtr.Zero;
+            var success = Kernel32.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
+            if (success || lpSize == IntPtr.Zero)
+                return false;
+
+            sInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+            success = Kernel32.InitializeProcThreadAttributeList(sInfoEx.lpAttributeList, 1, 0, ref lpSize);
+            if (!success)
+                return false;
+
+            // This value should persist until the attribute list is destroyed using the DeleteProcThreadAttributeList function
+            lpValue = Marshal.AllocHGlobal(IntPtr.Size);
+            Marshal.WriteIntPtr(lpValue, parentHandle);
+
+
+            success = Kernel32.UpdateProcThreadAttribute(
+                sInfoEx.lpAttributeList,
+                0,
+                (IntPtr)Kernel32.PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
+                lpValue,
+                (IntPtr)IntPtr.Size,
+                IntPtr.Zero,
+                IntPtr.Zero);
+
+            return success;
+        }
+
         private static bool ExtractCommandLine() {
             string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
             string dispatcher_dir = Path.GetDirectoryName(dispatcher);
@@ -187,14 +266,11 @@ namespace Dispatcher {
             as_desktop_user = false;
             use_job = true;
             restart_on_network_change = false;
+            detached = false;
 
             args = String.Empty;
+            use_showwindow = !DISPACHER_WIN;
 
-#if DISPACHER_WIN
-      use_showwindow = false;
-#else
-            use_showwindow = true;
-#endif
             var config = ConfigurationParser.loadConfig();
 
             if (!config.ContainsKey("PATH"))
@@ -249,6 +325,8 @@ namespace Dispatcher {
                     logsPath = value;
                 if(key == "USE_JOB")
                     use_job = toBool(value);
+                if(key == "DETACHED")
+                    detached = toBool(value);
             }
             var argv = System.Environment.GetCommandLineArgs();
 

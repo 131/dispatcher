@@ -142,17 +142,18 @@ namespace Utils
 
 
     public const UInt32 INFINITE = 0xFFFFFFFF;
+    public const int PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000;
 
+        public const int STARTF_USESTDHANDLES = 0x00000100;
 
-    public const int STARTF_USESTDHANDLES = 0x00000100;
-
+    public const int EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
 
     public const int CREATE_NO_WINDOW = 0x08000000;
     public const int CREATE_BREAKAWAY_FROM_JOB = 0x01000000;
     public const int CREATE_UNICODE_ENVIRONMENT = 0x00000400;
     public const int CREATE_NEW_CONSOLE = 0x00000010;
 
-        public const int DETACHED_PROCESS = 0x00000008;
+    public const int DETACHED_PROCESS = 0x00000008;
     public const int SW_HIDE = 0x0000000;
     public const int STARTF_USESHOWWINDOW  = 0x00000001;
 
@@ -193,12 +194,13 @@ namespace Utils
         out PROCESS_INFORMATION lpProcessInformation);
 
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool InitializeProcThreadAttributeList(
-        out IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool InitializeProcThreadAttributeList(
+            IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+
+        [DllImport("kernel32.dll", SetLastError = true)]
     public static extern IntPtr CreateFile(string lpFileName, DesiredAccess dwDesiredAccess, uint dwShareMode, SECURITY_ATTRIBUTES lpSecurityAttributes, CreationDisposition dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
 
 
@@ -210,6 +212,18 @@ namespace Utils
 
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool UpdateProcThreadAttribute(
+        IntPtr lpAttributeList, uint dwFlags, IntPtr Attribute, IntPtr lpValue,
+        IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
+
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool DeleteProcThreadAttributeList(IntPtr lpAttributeList);
 
 
 
