@@ -179,9 +179,10 @@ namespace Dispatcher {
                 dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
 
 
-            IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
-            SetParent(parentHandle, ref sInfoEx, ref lpValue);
-
+            if(detached) {
+              IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
+              SetParent(parentHandle, ref sInfoEx, ref lpValue);
+            }
 
             Kernel32.CreateProcess(
                 null,                 // No module name (use command line)
