@@ -316,9 +316,9 @@ namespace Dispatcher {
                     execPreCmd = value;
                 if (key == "CWD")
                     cwd = value;
-                if (key == "AS_SERVICE")
-                    as_service = true;
-                if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
+                if (key == "AS_SERVICE") {
+                    as_service = value == "auto" ? ProcessExtensions.isService() : toBool(value);
+                } if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
                     restart_on_network_change = true;
                 if (key == "AS_DESKTOP_USER") {
                     as_desktop_user = true;

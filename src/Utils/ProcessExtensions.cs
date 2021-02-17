@@ -249,6 +249,14 @@ namespace murrayju.ProcessExtensions
         }
 
 
+      public static bool isService()
+      {
+          string userName = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
+          return userName == "S-1-5-18" || userName == "S-1-5-19" || userName == "S-1-5-20";
+      }
+
+
+
     internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs,
             string args = "", string workDir = null, bool visible = true, string logsPath = null)
         {
