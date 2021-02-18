@@ -321,7 +321,7 @@ namespace Dispatcher {
                 } if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
                     restart_on_network_change = true;
                 if (key == "AS_DESKTOP_USER") {
-                    as_desktop_user = true;
+                    as_desktop_user = value == "auto" ? ProcessExtensions.isService() : toBool(value);
                 } if (key == "OUTPUT")
                     logsPath = value;
                 if(key == "USE_JOB")

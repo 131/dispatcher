@@ -1,5 +1,10 @@
+# v1.29.0
+* Allow AS_DESKTOP_USER auto value
+
 # v1.28.0
 * Allow AS_SERVICE auto value
+
+
 
 # v1.1.0
 * Prevent comma "," to be quote encoded in args (fix for user32.dll calls)
