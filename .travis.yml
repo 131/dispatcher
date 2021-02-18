@@ -10,7 +10,7 @@ jobs:
     - export PATH=$PATH:";C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319"
     - export MSYS2_ARG_CONV_EXCL="*"
     script:
-    - ./build test
+    - ./build --build --sign --test
     deploy:
       skip_cleanup: true
       verbose: true

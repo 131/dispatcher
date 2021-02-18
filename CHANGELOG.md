@@ -1,3 +1,6 @@
+# v2.0.0
+* Now with signed release
+
 # v1.29.0
 * Allow AS_DESKTOP_USER auto value
 

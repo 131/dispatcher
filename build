@@ -1,6 +1,12 @@
 #!/bin/bash
 
-set -xe
+set -eu
+
+# read secrets from env file, if available
+
+if [[ -f .env ]] ; then
+  export $(cat .env | xargs)
+fi
 
 if which wslpath; then
   PATH=$PATH:$(wslpath 'C:\Windows\Microsoft.NET\Framework\v4.0.30319')
@@ -13,25 +19,83 @@ out_win_x64=dispatcher_win_x64.exe
 out_cmd_x64=dispatcher_cmd_x64.exe
 
 
-rm -f $out_win_x86  $out_cmd_x86  $out_win_x64  $out_cmd_x64
+dobuild=
+dosign=
+dotest=
+
+while test $# -gt 0
+do
+  case "$1" in
+    --build) dobuild=true
+        ;;
+    --sign) dosign=true
+        ;;
+    --test) dotest=true
+        ;;
+    --*) echo "bad option $1"
+        ;;
+    *) echo "argument $1"
+        ;;
+  esac
+  shift
+done
+
+sign() {
+  FILE_IN="$1"
+  FILE_OUT="$FILE_IN.signed"
+
+  echo "Signing $FILE_IN"
+
+  args=(-s -X PUT --data-binary @-)
+  args=("${args[@]}"  -D -)
+  args=("${args[@]}" -o $FILE_OUT)
+
+  response=$(cat $FILE_IN | curl "${args[@]}" $DISPATCHER_JANUS_URL | sed 's/\r$//' )
+
+  if echo "$response" | grep -qe "HTTP/1.. 200 " ; then
+    mv $FILE_OUT $FILE_IN
+    echo "$FILE_IN successfully signed."
+  else
+    echo  "Could not sign $FILE_IN"
+    exit 1
+  fi
+}
 
 
-args=(/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0 /errorendlocation /preferreduilang:en-US /highentropyva- /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\mscorlib.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Xml.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.ServiceProcess.dll   /filealign:512 /utf8output)
-files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs)
+if [[ ! -z "$dobuild" ]] ; then
+  echo "Running application build"
 
-csc.exe "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
-csc.exe "${args[@]}" /platform:x86                       /target:exe    /out:$out_cmd_x86 "${files[@]}"
+  rm -f $out_win_x86  $out_cmd_x86  $out_win_x64  $out_cmd_x64
 
-csc.exe "${args[@]}" /platform:x64 /define:DISPACHER_WIN /target:winexe /out:$out_win_x64 "${files[@]}"
-csc.exe "${args[@]}" /platform:x64                       /target:exe    /out:$out_cmd_x64 "${files[@]}"
+  args=(/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0 /errorendlocation /preferreduilang:en-US /highentropyva- /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\mscorlib.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Xml.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.ServiceProcess.dll   /filealign:512 /utf8output)
+  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs)
 
+  csc.exe "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
+  csc.exe "${args[@]}" /platform:x86                       /target:exe    /out:$out_cmd_x86 "${files[@]}"
 
-if [[ $1 == "sign" ]]; then
-  signer $out_win_x86 $out_cmd_x86 $out_win_x64 $out_cmd_x64
+  csc.exe "${args[@]}" /platform:x64 /define:DISPACHER_WIN /target:winexe /out:$out_win_x64 "${files[@]}"
+  csc.exe "${args[@]}" /platform:x64                       /target:exe    /out:$out_cmd_x64 "${files[@]}"
+
+fi
+
+if [[ ! -z "$dosign" ]] ; then
+  if [[ -z "$DISPATCHER_JANUS_URL" ]] ; then
+    echo "No signing server defined";
+    exit 1
+  fi
+
+  echo "Signing binaries"
+
+  sign $out_win_x86
+  sign $out_cmd_x86
+  sign $out_win_x64
+  sign $out_cmd_x64
 fi
 
 
-if [[ $1 == "test" ]]; then
+if [[ ! -z "$dotest" ]] ; then
+  echo "Running test suite"
+
   npm install
   cmd.exe /c npm test
 fi

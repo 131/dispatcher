@@ -233,6 +233,8 @@ dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to
 # Credits
 * [131](https://github.com/131)
 * [murrayju](https://github.com/murrayju/CreateProcessAsUser)
+* Code signing, courtesy of IVS Group.
+
 
 # Relatives/alternatives
 * [run.exe](http://www.straightrunning.com/projectrun.php) kinda stuff
