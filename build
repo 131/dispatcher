@@ -8,9 +8,13 @@ if [[ -f .env ]] ; then
   export $(cat .env | xargs)
 fi
 
+
 if which wslpath; then
   PATH=$PATH:$(wslpath 'C:\Windows\Microsoft.NET\Framework\v4.0.30319')
+elif which cygpath; then
+  PATH=$PATH:$(cygpath 'C:\Windows\Microsoft.NET\Framework\v4.0.30319')
 fi
+
 
 
 out_win_x86=dispatcher_win.exe
@@ -67,7 +71,11 @@ if [[ ! -z "$dobuild" ]] ; then
 
   rm -f $out_win_x86  $out_cmd_x86  $out_win_x64  $out_cmd_x64
 
-  args=(/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0 /errorendlocation /preferreduilang:en-US /highentropyva- /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\mscorlib.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.Xml.dll /reference:C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\System.ServiceProcess.dll   /filealign:512 /utf8output)
+  v2=C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727
+  args=(/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0 /errorendlocation /preferreduilang:en-US /highentropyva-)
+  args=("${args[@]}" /reference:$v2\\mscorlib.dll /reference:$v2\\System.dll /reference:$v2\\System.Xml.dll /reference:$v2\\System.ServiceProcess.dll)
+  args=("${args[@]}" /filealign:512 /utf8output)
+
   files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs)
 
   csc.exe "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
@@ -96,6 +104,6 @@ fi
 if [[ ! -z "$dotest" ]] ; then
   echo "Running test suite"
 
-  npm install
+  cmd.exe /c npm install
   cmd.exe /c npm test
 fi

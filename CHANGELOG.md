@@ -1,3 +1,6 @@
+# v2.0.1
+* Signed releases using github actions
+
 # v2.0.0
 * Now with signed release
 
