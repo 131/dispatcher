@@ -54,7 +54,7 @@ sign() {
   args=("${args[@]}"  -D -)
   args=("${args[@]}" -o $FILE_OUT)
 
-  response=$(cat $FILE_IN | curl "${args[@]}" $DISPATCHER_JANUS_URL | sed 's/\r$//' )
+  response=$(cat $FILE_IN | curl "${args[@]}" $SIGNING_SERVER | sed 's/\r$//' )
 
   if echo "$response" | grep -qe "HTTP/1.. 200 " ; then
     mv $FILE_OUT $FILE_IN
@@ -87,7 +87,7 @@ if [[ ! -z "$dobuild" ]] ; then
 fi
 
 if [[ ! -z "$dosign" ]] ; then
-  if [[ -z "$DISPATCHER_JANUS_URL" ]] ; then
+  if [[ -z "$SIGNING_SERVER" ]] ; then
     echo "No signing server defined";
     exit 1
   fi
