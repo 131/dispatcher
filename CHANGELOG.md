@@ -1,4 +1,9 @@
-# v2.0.1
+# v2.0.3
+* Expose DISPATCHED_SERVICE_MODE=true when running as service = auto
+
+
+
+# v2.0.2
 * Signed releases using github actions
 
 # v2.0.0

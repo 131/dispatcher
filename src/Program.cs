@@ -318,6 +318,8 @@ namespace Dispatcher {
                     cwd = value;
                 if (key == "AS_SERVICE") {
                     as_service = value == "auto" ? ProcessExtensions.isService() : toBool(value);
+                    if(value == "auto" && as_service)
+                      envs["DISPATCHED_SERVICE_MODE"] = "true";
                 } if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
                     restart_on_network_change = true;
                 if (key == "AS_DESKTOP_USER") {
