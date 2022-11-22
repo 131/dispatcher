@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -eux
 
 # read secrets from env file, if available
 
@@ -73,10 +73,10 @@ if [[ ! -z "$dobuild" ]] ; then
 
   v2=C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727
   args=(/noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:0 /errorendlocation /preferreduilang:en-US /highentropyva-)
-  args=("${args[@]}" /reference:$v2\\mscorlib.dll /reference:$v2\\System.dll /reference:$v2\\System.Xml.dll /reference:$v2\\System.ServiceProcess.dll)
+  args=("${args[@]}" /reference:$v2\\mscorlib.dll /reference:$v2\\System.dll /reference:$v2\\System.Xml.dll /reference:$v2\\System.ServiceProcess.dll /reference:$v2\\System.Management.dll)
   args=("${args[@]}" /filealign:512 /utf8output)
 
-  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs)
+  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs src\\Utils\\UWFManagement.cs)
 
   csc.exe "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
   csc.exe "${args[@]}" /platform:x86                       /target:exe    /out:$out_cmd_x86 "${files[@]}"

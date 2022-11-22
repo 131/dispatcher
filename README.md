@@ -87,6 +87,9 @@ You can define custom env var in dispatcher.config
     <add key="ARGV1" value="/usr/sbin/sshd -D"/>
     <add key="USE_SHOWWINDOW" value="true"/>
     <add key="CWD" value="c:\my\working\dir"/>
+
+    <add key="ENV_FOO" value="bar"/>
+    <add key="ENV_OTHERTHING" value="something"/>
   </appSettings>
 </configuration>
 ```
@@ -145,6 +148,9 @@ When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mod
     <add key="PATH" value="node.exe"/>
     <add key="ARGV0" value="main.js"/>
     <add key="AS_SERVICE" value="true"/>
+
+<!-- prevent execution during UWF servicing sessions ->
+    <add key="UWF_SERVICING_DISABLED" value="true"/>
 
 <!-- to run a service in interactive session -->
     <add key="AS_DESKTOP_USER" value="true"/>

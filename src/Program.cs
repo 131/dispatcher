@@ -37,6 +37,7 @@ namespace Dispatcher {
         static bool use_showwindow;
         static bool as_service;
         static bool as_desktop_user;
+        public static bool uwf_servicing_disabled;
         static bool use_job;
         static bool detached;
 #if DISPACHER_WIN
@@ -152,7 +153,7 @@ namespace Dispatcher {
             IntPtr hLogs = IntPtr.Zero;
 
 
-            sInfoEx.StartupInfo.wShowWindow = Kernel32.SW_HIDE;
+            sInfoEx.StartupInfo.wShowWindow = Kernel32.SW_HIDE; //? Kernel32.SW_NORMAL
             sInfoEx.StartupInfo.hStdInput = iStdIn;
             sInfoEx.StartupInfo.hStdOutput = iStdOut;
             sInfoEx.StartupInfo.hStdError = iStdErr;
@@ -183,6 +184,7 @@ namespace Dispatcher {
               IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
               SetParent(parentHandle, ref sInfoEx, ref lpValue);
             }
+ 
 
             Kernel32.CreateProcess(
                 null,                 // No module name (use command line)
@@ -266,6 +268,8 @@ namespace Dispatcher {
             as_service = false;
             as_desktop_user = false;
             use_job = true;
+            uwf_servicing_disabled = false;
+
             restart_on_network_change = false;
             detached = false;
 
@@ -316,6 +320,8 @@ namespace Dispatcher {
                     execPreCmd = value;
                 if (key == "CWD")
                     cwd = value;
+                if (key == "UWF_SERVICING_DISABLED")
+                    uwf_servicing_disabled =  toBool(value);
                 if (key == "AS_SERVICE") {
                     as_service = value == "auto" ? ProcessExtensions.isService() : toBool(value);
                     if(value == "auto" && as_service)
@@ -438,12 +444,19 @@ namespace Dispatcher {
 
         protected override void OnStart(string[] args)
         {
-            t = new Thread(() => Run());
+            bool shouldRun = ! (Program.uwf_servicing_disabled && UWFManagement.servicingEnabled());
+
+            if (shouldRun)
+                t = new Thread(() => Run());
+            else
+                t = new Thread(() => Noop());
+
             t.Start();
 
             if(Program.restart_on_network_change)
                 NetworkChange.NetworkAddressChanged += new NetworkAddressChangedEventHandler(AddressChangedCallback);
         }
+
         protected void Run()
         {
             lock (block)
@@ -451,6 +464,18 @@ namespace Dispatcher {
                 while (true)
                 {
                     Program.Run();
+                    Monitor.Wait(block, delay);
+                    delay = delay * 2;
+                }
+            }
+        }
+
+        protected void Noop()
+        {
+            lock (block)
+            {
+                while (true)
+                {
                     Monitor.Wait(block, delay);
                     delay = delay * 2;
                 }

@@ -154,7 +154,10 @@ namespace Utils
     public const int CREATE_NEW_CONSOLE = 0x00000010;
 
     public const int DETACHED_PROCESS = 0x00000008;
-    public const int SW_HIDE = 0x0000000;
+
+    public const int SW_HIDE   = 0x0000000;
+    public const int SW_NORMAL = 0x00000001;
+
     public const int STARTF_USESHOWWINDOW  = 0x00000001;
 
     public const int STD_OUTPUT_HANDLE = -11;
