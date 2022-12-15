@@ -29,6 +29,25 @@ describe("Initial test suite", function(){
       await mock.cleanup();
   });
 
+
+
+  it("Should do a very simple test", async () => {
+      let tmp = new mock({
+        "ARGV0" : "-p",
+        "ARGV1" : "1+1",
+      });
+
+      let child = spawn(tmp.execPath);
+      let [exit, stdout] = await Promise.all([wait(child), drain(child.stdout)]);
+      let body = String(stdout);
+
+      expect(body).to.eql("2\n");
+
+
+      cleanups.push(tmp);
+  });
+
+
   it("Should forward stdout", async () => {
       let tmp = new mock();
 
@@ -213,7 +232,7 @@ describe("Jobs tests suite", function() {
       main.kill();
 
       let after = await getProcessList();
-      let dispatchedAfter = after.find(line => line.ProcessId == dispatched.processId)
+      let dispatchedAfter = after.find(line => line.ProcessId == dispatched.ProcessId)
       expect(dispatchedAfter).to.eql(undefined);
 
       cleanups.push(tmp);
@@ -221,11 +240,12 @@ describe("Jobs tests suite", function() {
 
 
 
+
   it("should preserve child on dispatched exit (without job)", async () => {
       let tmp = new mock({USE_JOB : "false"});
 
       let main = spawn(tmp.execPath,  ['-e', "setInterval(a=>0, 1000)"]);
-      console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000);
+      console.log("Waiting for subchild", main.pid, "to appear"), await sleep(1000  * 3);
 
       let before = await getProcessList();
       let dispatched = before.find(line => line.ParentProcessId == main.pid)
