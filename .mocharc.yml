@@ -1,2 +1,2 @@
 spec:
-  - 'node_modules/dispatcher-tests/**.js'
+  - 'node_modules/dispatcher-tests/test/**.js'

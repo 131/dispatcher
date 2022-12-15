@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dispatcher-tests": "^0.1.1",
+    "dispatcher-tests": "^0.1.2",
     "mocha": "^10.2.0"
   },
   "devDependencies": {}
