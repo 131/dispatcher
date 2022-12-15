@@ -1,0 +1,2 @@
+spec:
+  - 'node_modules/dispatcher-tests/**.js'
