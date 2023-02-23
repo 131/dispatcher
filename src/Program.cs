@@ -278,7 +278,15 @@ namespace Dispatcher {
 
             var config = ConfigurationParser.loadConfig();
 
-            if (!config.ContainsKey("PATH"))
+            string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+
+            string pathKey = "PATH";
+            string exePathFlavor = Environment.GetEnvironmentVariable("DISPATCHER_" + dispatched_cmd + "_FLAVOR");
+
+            if(!String.IsNullOrEmpty(exePathFlavor))
+              pathKey = "PATH_" + exePathFlavor;;
+
+            if (!config.ContainsKey(pathKey))
             {
                 Console.Error.WriteLine("Cannot resolve cmd");
                 return false;
@@ -287,9 +295,7 @@ namespace Dispatcher {
                 use_showwindow = toBool(config[FLAG_USE_SHOWWINDOW]);
 
 
-            exePath = config["PATH"];
-
-            string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+            exePath = config[pathKey];
 
             string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
             if (File.Exists(exefoo))

@@ -1,3 +1,7 @@
+# v2.2.0
+* Allow multiple flavor dispatch using DISPATCHER_*NAME*_FLAVOR=XXX syntax
+
+
 # v2.0.3
 * Expose DISPATCHED_SERVICE_MODE=true when running as service = auto
 

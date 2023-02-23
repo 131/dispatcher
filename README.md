@@ -97,6 +97,30 @@ You can define custom env var in dispatcher.config
 * `%dwd%` is replaced with the absolute path to the `[dispatched].exe` directory
 
 
+## Multiple flavor
+Using the env var `DISPATCHER_*NAME*_FLAVOR` you can toggle multiple flavor of an exe with the same dispatcher
+```
+node.config
+
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+
+    <add key="PATH" value="..\node-v12.22.9-win-x64\node.exe"/>
+    <add key="PATH_8" value="..\node-v8.17.0-win-x64\node.exe"/>
+    <add key="PATH_16" value="..\node-v16.19.0-win-x64\node.exe"/>
+
+    <add key="ENV_NODE_PATH" value="%dwd%/node_modules"/>
+  </appSettings>
+</configuration>
+
+
+set DISPATCHER_NODE_FLAVOR=8 # will toggle node 8
+set DISPATCHER_NODE_FLAVOR=16 # will toggle node 16
+
+```
+
+
 
 ## DETACHED flag
 When using dispatcher_win, you can use the `DETACHED` flag for the dispatcher NOT to wait for the child to exit.
