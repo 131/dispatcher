@@ -70,6 +70,7 @@ namespace Dispatcher {
             string exeDir = Path.GetDirectoryName(exePath);
             envs["Path"] = envs["Path"] + ";" + exeDir;
 
+            Environment.SetEnvironmentVariable("PATH", null);
             foreach (KeyValuePair<string, string> env in envs)
                 Environment.SetEnvironmentVariable(env.Key, env.Value);
 
