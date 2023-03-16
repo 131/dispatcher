@@ -1,3 +1,6 @@
+# v2.2.2
+* Expose UWF_SERVICING_ENABLED through UWF_SERVICING_DETECT or AS_SERVICE flag
+
 # v2.2.0
 * Allow multiple flavor dispatch using DISPATCHER_*NAME*_FLAVOR=XXX syntax
 

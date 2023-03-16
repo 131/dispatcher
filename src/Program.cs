@@ -329,11 +329,14 @@ namespace Dispatcher {
                     cwd = value;
                 if (key == "UWF_SERVICING_DISABLED")
                     uwf_servicing_disabled =  toBool(value);
+
+                if(key == "UWF_SERVICING_DETECT" || key == "AS_SERVICE") {
+                  if(UWFManagement.servicingEnabled())
+                    envs["UWF_SERVICING_ENABLED"] =  "true";
+                }
+
                 if (key == "AS_SERVICE") {
                     as_service = value == "auto" ? ProcessExtensions.isService() : toBool(value);
-
-                    if(UWFManagement.servicingEnabled())
-                      envs["UWF_SERVICING_ENABLED"] = "true";
 
                     if(value == "auto" && as_service)
                       envs["DISPATCHED_SERVICE_MODE"] = "true";

@@ -183,6 +183,10 @@ When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mod
 </configuration>
 ```
 
+## UWF_SERVICING_DETECT
+Using the `AS_SERVICE` or the `UWF_SERVICING_DETECT` flag will populate the `UWF_SERVICING_ENABLED` env variable with wether or not servicing mode is in progress.
+
+
 
 
 ## Redirect output to a file (usefull for services)
