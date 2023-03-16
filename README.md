@@ -254,7 +254,7 @@ dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to
 # Running the command is slow
 If you have a fresh install of Windows, you may have to build native images to [improve performance of managed applications](https://learn.microsoft.com/en-us/dotnet/framework/tools/ngen-exe-native-image-generator).
 
-Open command prompt as an administrator and run these commands:
+Open Command Prompt as an administrator and run these commands:
 ```
 %windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe executeQueuedItems
 %windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe executeQueuedItems
