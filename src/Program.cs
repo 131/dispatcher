@@ -296,7 +296,7 @@ namespace Dispatcher {
                 use_showwindow = toBool(config[FLAG_USE_SHOWWINDOW]);
 
 
-            exePath = config[pathKey];
+            exePath = Environment.ExpandEnvironmentVariables(config[pathKey]);
 
             string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
             if (File.Exists(exefoo))
