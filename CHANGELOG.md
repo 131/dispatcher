@@ -1,3 +1,6 @@
+# v2.2.3
+* Fix win32 logs output
+
 # v2.2.2
 * Expose UWF_SERVICING_ENABLED through UWF_SERVICING_DETECT or AS_SERVICE flag
 
