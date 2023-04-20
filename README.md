@@ -8,7 +8,7 @@
 
 dispatcher
 ==========
-Powerful process forwarder (or proxy) for Windows. It can be considered as a open source, free and more powerfull alternative to 
+Powerful process forwarder (or proxy) for Windows. It can be considered as a open source, free and more powerfull alternative to
 [chocolatey shimgen](https://chocolatey.org/docs/features-shim)
 
 # How to use
@@ -26,7 +26,7 @@ Configuration file syntax is :
 ```
 
 # Download
-Find all download in [github releases](https://github.com/131/dispatcher/releases)
+Find all downloads in [GitHub Releases](https://github.com/131/dispatcher/releases)
 
 
 # Motivation  - sample usage
@@ -42,7 +42,7 @@ C:\Program Files\node\bin\node.exe
 C:\Program Files x86\php\bin\php.exe
 D:\weird\directory\turtoisesvn\svn.exe
 C:\cygwin\bin\git.exe
-  
+
 
 # I create  a single, well balanced directory
 C:\dispatchedbin\
@@ -71,7 +71,6 @@ You can force additional args (injected before args that might have been sent to
   </appSettings>
 </configuration>
 ```
-    
 
 
 ## Env vars
@@ -121,7 +120,6 @@ set DISPATCHER_NODE_FLAVOR=16 # will toggle node 16
 ```
 
 
-
 ## DETACHED flag
 When using dispatcher_win, you can use the `DETACHED` flag for the dispatcher NOT to wait for the child to exit.
 
@@ -142,7 +140,7 @@ If you dispatch a console app (e.g. WSL bash.exe) from a desktop app (i.e. dispa
 ```
 # In my current configuration
 D:\apps\wsl-init.exe (dispatch_win_x64.exe)
-D:\apps\wsl-init.exe.config 
+D:\apps\wsl-init.exe.config
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -156,7 +154,7 @@ D:\apps\wsl-init.exe.config
 
 
 ## Pre-executation command
-Using the `PRESTART_CMD` flag make **dispatcher** run a command before another (usefull for services).
+Using the `PRESTART_CMD` flag make **dispatcher** run a command before another (useful for services).
 
 
 ## Using dispatcher to run Windows service
@@ -187,8 +185,6 @@ When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mod
 Using the `AS_SERVICE` or the `UWF_SERVICING_DETECT` flag will populate the `UWF_SERVICING_ENABLED` env variable with wether or not servicing mode is in progress.
 
 
-
-
 ## Redirect output to a file (usefull for services)
 Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modifiers are available.
 
@@ -203,8 +199,9 @@ Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modif
 </configuration>
 ```
 
+
 # Service restart policy
-In service mode, dispatcher will restart your process every time it exit, with an exponential (pow 2) backoff delay. 
+In service mode, dispatcher will restart your process every time it exit, with an exponential (pow 2) backoff delay.
 
 
 ## SERVICE_RESTART_ON_NETWORK_CHANGE
@@ -225,8 +222,6 @@ Use the `SERVICE_RESTART_ON_NETWORK_CHANGE` flag to reset the backoff delay.
 ```
 
 
-
-
 ## Configuration lookup path
 dispatcher will lookup for configurations directives in
 
@@ -237,10 +232,9 @@ dispatcher will lookup for configurations directives in
 Any directive defined multipled time will be overrided with the latest value
 
 
-
 ## Using multiple versions of the same software
 ```
-install php 5 in 
+install php 5 in
 C:\Program Files x86\php5.0\bin\php.exe
 install php 7 in
 C:\Program Files x86\php7.0\bin\php.exe
@@ -248,14 +242,24 @@ C:\Program Files x86\php7.0\bin\php.exe
 Create to dispatcher (php5.exe & php7.exe)
 ```
 
-## Make a portable binary out of any shell/script 
+## Make a portable binary out of any shell/script
 Using dispatcher.exe is a nifty way to create portable binaries out of shell scripts (.bat,.js,.php)
 
 
-
-
-# How does it works
+# How does it work
 dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to the forwarded process. Therefore, supports PIPE, Console or FILE as process handle (& all others handler). The dispatcher & the underlying process are bound to kernel32 Job group (tied together, you cannot kill one without the other). Exit code is forwarded.
+
+
+# Running the command is slow
+If you have a fresh install of Windows, you may have to build native images to [improve performance of managed applications](https://learn.microsoft.com/en-us/dotnet/framework/tools/ngen-exe-native-image-generator).
+
+Open Command Prompt as an administrator and run these commands:
+```
+%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe executeQueuedItems
+%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe executeQueuedItems
+```
+
+If this does not solve the issue, it may be the application that Dispatcher is calling itself having slowdown issues.
 
 
 ## Tested & approved binaries (for reference)
@@ -274,7 +278,6 @@ dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to
 * [run.exe](http://www.straightrunning.com/projectrun.php) kinda stuff
 * [shimgen](https://chocolatey.org/docs/features-shim)
 
+
 # Shoutbox, keywords, SEO love
 background cmd, wsl bash, linux subsystem, process forward, kernel32, USE_SHOWWINDOW
-
-
