@@ -53,6 +53,13 @@ sign() {
   args=(-s -X PUT --data-binary @-)
   args=("${args[@]}"  -D -)
   args=("${args[@]}" -o "$FILE_OUT")
+#  args=("${args[@]}" \
+#      -H 'x-container: ' \
+#      -H 'x-pin:  ' \
+#      -H 'x-thumbprint: ' \
+#      -H 'x-timestamp:  http://timestamp.digicert.com' \
+#  )
+
 
   response=$(cat "$FILE_IN" | curl "${args[@]}" $SIGNING_SERVER | sed 's/\r$//' )
 

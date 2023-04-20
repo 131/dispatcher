@@ -191,7 +191,6 @@ Using the `AS_SERVICE` or the `UWF_SERVICING_DETECT` flag will populate the `UWF
 
 ## Redirect output to a file (usefull for services)
 Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modifiers are available.
-You might want to use x64 bits version of the dispatcher to get the output redirection working.
 
 ```
 <?xml version="1.0" encoding="utf-8" ?>
