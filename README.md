@@ -4,8 +4,6 @@
 ![Available platform](https://img.shields.io/badge/platform-win32-blue.svg)
 
 
-
-
 dispatcher
 ==========
 Powerful process forwarder (or proxy) for Windows. It can be considered as a open source, free and more powerfull alternative to
@@ -16,7 +14,7 @@ Rename/duplicate `dispatcher.exe` to `[something].exe`.
 Write a `[something].config` file next to it to configure redirection.
 
 Configuration file syntax is :
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -56,10 +54,11 @@ C:\dispatchedbin\php.exe.config => C:\Program Files x86\php\bin\php.exe
 ```
 
 # Advanced usage, few things to understand
-* There is a fundamental difference in console applications  & desktop applications for windows
-* therefore [dispatcher](https://github.com/131/dispatcher) comes in 2 flavors - respectively dispatcher_cmd.exe &  dispatcher_win.exe.
+* There is a fundamental difference in console applications & desktop applications for windows
+* therefore [dispatcher](https://github.com/131/dispatcher) comes in 2 flavors - respectively dispatcher_cmd.exe & dispatcher_win.exe.
 * You cannot spawn x64 executables located in c:\windows\system32 from a win32 application.
-* therefore [dispatcher.exe](https://github.com/131/dispatcher) is available in 2 architectures : x32 & x64
+* therefore [dispatcher.exe](https://github.com/131/dispatcher) is available in 2 architectures : x86 & x64
+
 
 ## Forced args
 You can force additional args (injected before args that might have been sent toward `[dispatched].exe`
@@ -123,7 +122,7 @@ set DISPATCHER_NODE_FLAVOR=16 # will toggle node 16
 ## DETACHED flag
 When using dispatcher_win, you can use the `DETACHED` flag for the dispatcher NOT to wait for the child to exit.
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -163,7 +162,7 @@ Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service complia
 When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mode only if running as NT_AUTHORITY.
 
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -188,7 +187,7 @@ Using the `AS_SERVICE` or the `UWF_SERVICING_DETECT` flag will populate the `UWF
 ## Redirect output to a file (usefull for services)
 Using the `OUTPUT` flag redirect stderr & stdout to a dedicated file. Date modifiers are available.
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -208,7 +207,7 @@ In service mode, dispatcher will restart your process every time it exit, with a
 Dispatcher can monitor network interface status change.
 Use the `SERVICE_RESTART_ON_NETWORK_CHANGE` flag to reset the backoff delay.
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
   <appSettings>
@@ -225,11 +224,35 @@ Use the `SERVICE_RESTART_ON_NETWORK_CHANGE` flag to reset the backoff delay.
 ## Configuration lookup path
 dispatcher will lookup for configurations directives in
 
+* if existing `[dispatcher_config]/[dispatched].config` (xml file)
+* if existing `[dispatcher_config]/[dispatched].exe.config` (xml file)
 * if existing `[dispatched].config` (xml file)
-* if existing `[dispatched].exe.config`  (xml file)
-* all matching `[dispatched_directory]/[dispatched].config.d/*.config`  (xml files)
+* if existing `[dispatched].exe.config` (xml file)
+* all matching `[dispatched_directory]/[dispatched].config.d/*.config` (xml files)
 
-Any directive defined multipled time will be overrided with the latest value
+Any directive defined multiple times will be overriden with the latest value
+
+By default, `dispatcher_config` is set to `[dispatched_directory]/dispatcher-config`
+or `[home_directory]/.dispatcher-config` but this can be overriden if you set the
+`DISPATCHERCFGDIR` environment variable to the directory path that contains your
+configuration files, for example:
+
+
+```batch
+set DISPATCHERCFGDIR=C:\my-configs
+dispatched hello world
+```
+
+Will use the configuration file `C:\my-configs\dispatched.config` or
+`C:\my-configs\dispatched.exe.config` if they exist, else the program will
+default to the other 3 posibilites outlined above.
+
+If any configurations reside in `dispatched_directory` they will override all
+values imposed by existing configurations in `dispatcher_config`.
+
+To circumvent this rename or remove any configuration files residing in the
+`dispatched_directory` which is the directory where your dispatcher exe is
+stored at.
 
 
 ## Using multiple versions of the same software
