@@ -285,7 +285,7 @@ namespace Dispatcher {
             if (dispatcherConfigDir == null)
             {
                 string path1 = dispatcher_dir + "\\" + Program.configDirName;
-                string path2 = "C:\\Users\\" + Program.currentUser + "." + Program.configDirName;
+                string path2 = "C:\\Users\\" + Program.currentUser + "\\." + Program.configDirName;
 
                 if (Directory.Exists(path1))
                     dispatcherConfigDir = path1;
