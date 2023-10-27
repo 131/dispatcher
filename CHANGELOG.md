@@ -1,3 +1,6 @@
+# v2.2.5
+* Add a 10s watchdog in UWF_SERVICING_DETECT
+
 # v2.2.3
 * Fix win32 logs output
 
