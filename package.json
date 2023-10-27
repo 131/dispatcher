@@ -1,7 +1,7 @@
 {
   "name": "dispatcher",
   "private": true,
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "tests suite for dispatcher",
   "main": "index.js",
   "scripts": {
