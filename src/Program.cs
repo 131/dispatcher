@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
@@ -13,52 +13,51 @@ using System.Net.NetworkInformation;
 using System.Net;
 
 namespace Dispatcher {
-
-
-
     public class Program
     {
+        // Console CTRL+C is delegated to subprocess, we do nothing here
+        private static bool ConsoleCtrlCheck(Kernel32.CtrlTypes ctrlType)
+        {
+            return true;
+        }
 
+        // These are used to reference paths to the user and other
+        // directories correlated with dispatcher configuration
+        // directory, which is used by loadConfig() to search for
+        // configurations in non-base directories.
+        public static string currentUser         = Environment.UserName;
+        public static string dispatcherConfigDir = Environment.GetEnvironmentVariable("DISPATCHERCFGDIR");
+        public const string  configDirName       = "dispatcher-config";
+        public static bool   has_config_dir;
+        public static string dispatched_cmd      = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
-
-      //Console CTRL+C is delegated to subprocess, we have nothing to do here
-      private static bool ConsoleCtrlCheck(Kernel32.CtrlTypes ctrlType)
-      {
-          return true;
-      }
-  
-        const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
-        static string exePath;
-        static string args;
-        static string cwd;
-        static string execPreCmd;
-
-        static string logsPath = "";
-        static bool use_showwindow;
-        static bool as_service;
-        static bool as_desktop_user;
-        public static bool uwf_servicing_disabled;
-        static bool use_job;
-        static bool detached;
+        const  string        FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
+        static string        exePath;
+        static string        args;
+        static string        cwd;
+        static string        execPreCmd;
+        static string        logsPath = "";
+        static bool          use_showwindow;
+        static bool          as_service;
+        static bool          as_desktop_user;
+        public static bool   uwf_servicing_disabled;
+        static bool          use_job;
+        static bool          detached;
 #if DISPACHER_WIN
-        static bool DISPACHER_WIN = true;
+        static bool          DISPACHER_WIN = true;
 #else
-        static bool DISPACHER_WIN = false;
+        static bool          DISPACHER_WIN = false;
 #endif
 
-        public static bool restart_on_network_change;
+        public static bool   restart_on_network_change;
 
         static uint exitCode;
         static Dictionary<string, string> envs;
 
-
         internal  static PROCESS_INFORMATION pInfo;
-
-
 
         static void Main()
         {
-
             Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
             envs = new Dictionary<string, string>();
@@ -71,34 +70,37 @@ namespace Dispatcher {
             envs["Path"] = envs["Path"] + ";" + exeDir;
 
             Environment.SetEnvironmentVariable("PATH", null);
+
             foreach (KeyValuePair<string, string> env in envs)
                 Environment.SetEnvironmentVariable(env.Key, env.Value);
 
-            if (as_service) {
+            if (as_service)
+            {
                 ServiceBase[] ServicesToRun;
                 ServicesToRun = new ServiceBase[]
                 {
                     new Service1()
                 };
                 ServiceBase.Run(ServicesToRun);
-            } else {
+            }
+            else
+            {
                 Run();
                 Environment.Exit((int)exitCode);
             }
         }
 
-        public static void Run() {
-
+        public static void Run()
+        {
             if (as_desktop_user)
             {
-                if(execPreCmd != null) {
+                if (execPreCmd != null)
+                {
                     pInfo = ProcessExtensions.StartProcessAsCurrentUser(execPreCmd, envs, "", cwd, !use_showwindow, logsPath);
                     Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
                     Kernel32.CloseHandle(pInfo.hThread);
                     Kernel32.CloseHandle(pInfo.hProcess);
                 }
-
-
 
                 pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow, logsPath);
 
@@ -112,36 +114,34 @@ namespace Dispatcher {
                 Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
                 Kernel32.CloseHandle(pInfo.hThread);
                 Kernel32.CloseHandle(pInfo.hProcess);
+
                 return;
             }
 
-
-            //make sure dispatcher kill its child process when killed
+            // Kill child process if we're killed
             if (use_job && !detached)
             {
-              var job = new Job();
-              job.AddProcess(Process.GetCurrentProcess().Handle);
+                var job = new Job();
+                job.AddProcess(Process.GetCurrentProcess().Handle);
             }
 
+            if (execPreCmd != null)
+            {
+                var startInfo = new ProcessStartInfo(execPreCmd);
+                startInfo.WorkingDirectory = cwd;
 
-            if(execPreCmd != null) {
-              var startInfo = new ProcessStartInfo(execPreCmd);
-              startInfo.WorkingDirectory = cwd;
-
-              using (Process exeProcess = Process.Start(startInfo))
-               {
+                using (Process exeProcess = Process.Start(startInfo))
+                {
                     exeProcess.WaitForExit();
                 }
             }
 
-
-            pInfo = new PROCESS_INFORMATION();
-            var sInfoEx = new STARTUPINFOEX();
-            sInfoEx.StartupInfo = new STARTUPINFO();
+            pInfo                  = new PROCESS_INFORMATION();
+            var sInfoEx            = new STARTUPINFOEX();
+            sInfoEx.StartupInfo    = new STARTUPINFO();
             sInfoEx.StartupInfo.cb = Marshal.SizeOf(sInfoEx);
 
             IntPtr lpValue = IntPtr.Zero;
-
 
             sInfoEx.StartupInfo.dwFlags = Kernel32.STARTF_USESTDHANDLES;
 
@@ -150,59 +150,61 @@ namespace Dispatcher {
 
             IntPtr iStdOut = Kernel32.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
             IntPtr iStdErr = Kernel32.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
-            IntPtr iStdIn = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
-            IntPtr hLogs = IntPtr.Zero;
-
+            IntPtr iStdIn  = Kernel32.GetStdHandle(Kernel32.STD_INPUT_HANDLE);
+            IntPtr hLogs   = IntPtr.Zero;
 
             sInfoEx.StartupInfo.wShowWindow = Kernel32.SW_HIDE; //? Kernel32.SW_NORMAL
-            sInfoEx.StartupInfo.hStdInput = iStdIn;
-            sInfoEx.StartupInfo.hStdOutput = iStdOut;
-            sInfoEx.StartupInfo.hStdError = iStdErr;
+            sInfoEx.StartupInfo.hStdInput   = iStdIn;
+            sInfoEx.StartupInfo.hStdOutput  = iStdOut;
+            sInfoEx.StartupInfo.hStdError   = iStdErr;
 
-            if (!String.IsNullOrEmpty(logsPath)) {
+            if (!String.IsNullOrEmpty(logsPath))
+            {
                 SECURITY_ATTRIBUTES lpSecurityAttributes = new SECURITY_ATTRIBUTES();
                 lpSecurityAttributes.bInheritHandle = 1;
                 lpSecurityAttributes.nLength = Marshal.SizeOf(lpSecurityAttributes);
 
-    
-                hLogs = Kernel32.CreateFile(logsPath, Kernel32.DesiredAccess.FILE_APPEND_DATA, 0x00000003 //share read& w
-                , ref lpSecurityAttributes, Kernel32.CreationDisposition.OPEN_ALWAYS, 0, IntPtr.Zero);
+                hLogs = Kernel32.CreateFile(
+                    logsPath,
+                    Kernel32.DesiredAccess.FILE_APPEND_DATA,
+                    3, // Shared Read & Write (RW)
+                    ref lpSecurityAttributes,
+                    Kernel32.CreationDisposition.OPEN_ALWAYS,
+                    0,
+                    IntPtr.Zero
+                );
 
                 sInfoEx.StartupInfo.hStdOutput = hLogs;
                 sInfoEx.StartupInfo.hStdError = hLogs;
             }
 
-
             uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT;
             dwCreationFlags |= Kernel32.EXTENDED_STARTUPINFO_PRESENT;
 
-            if(detached)
-              dwCreationFlags |= Kernel32.DETACHED_PROCESS;
+            if (detached)
+                dwCreationFlags |= Kernel32.DETACHED_PROCESS;
 
             if (!use_job)
                 dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
 
-
-            if(detached) {
-              IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
-              SetParent(parentHandle, ref sInfoEx, ref lpValue);
+            if (detached)
+            {
+                IntPtr parentHandle = ParentProcessUtilities.GetParentProcess().Handle;
+                SetParent(parentHandle, ref sInfoEx, ref lpValue);
             }
- 
 
             Kernel32.CreateProcess(
                 null,                 // No module name (use command line)
-                exePath + " " + args, // command line
+                exePath + " " + args, // Command line
                 IntPtr.Zero,          // Process handle not inheritable
                 IntPtr.Zero,          // Thread handle not inheritable
-                true,                // Set handle inheritance
-
-                dwCreationFlags,     // creation flags
-                IntPtr.Zero,         // Use parent's environment block
-                cwd,                 // Use parent's starting directory 
-                ref sInfoEx,         // Pointer to STARTUPINFO structure
-                out pInfo            // Pointer to PROCESS_INFORMATION structure
+                true,                 // Set handle inheritance
+                dwCreationFlags,      // Creation flags
+                IntPtr.Zero,          // Use parent's environment block
+                cwd,                  // Use parent's starting directory
+                ref sInfoEx,          // Pointer to STARTUPINFO structure
+                out pInfo             // Pointer to PROCESS_INFORMATION structure
             );
-
 
             if (sInfoEx.lpAttributeList != IntPtr.Zero)
             {
@@ -210,47 +212,48 @@ namespace Dispatcher {
                 Marshal.FreeHGlobal(sInfoEx.lpAttributeList);
             }
 
-            if(lpValue != IntPtr.Zero) {
-              Marshal.FreeHGlobal(lpValue);
-            }
+            if (lpValue != IntPtr.Zero)
+                Marshal.FreeHGlobal(lpValue);
 
-            if(detached) {
-              Kernel32.CloseHandle(pInfo.hThread);
-              Kernel32.CloseHandle(pInfo.hProcess);
-              return;
+            if (detached)
+            {
+                Kernel32.CloseHandle(pInfo.hThread);
+                Kernel32.CloseHandle(pInfo.hProcess);
+                return;
             }
 
             Kernel32.CloseHandle(pInfo.hThread);
             Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
             Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
 
-
-    
-
-            //clean up
-            if(hLogs != IntPtr.Zero)
+            // Clean up
+            if (hLogs != IntPtr.Zero)
                 Kernel32.CloseHandle(hLogs);
+
             Kernel32.CloseHandle(pInfo.hProcess);
             Kernel32.CloseHandle(iStdOut);
             Kernel32.CloseHandle(iStdErr);
             Kernel32.CloseHandle(iStdIn);
         }
 
-        private static bool SetParent(IntPtr parentHandle, ref STARTUPINFOEX sInfoEx, ref IntPtr lpValue){
+        private static bool SetParent(IntPtr parentHandle, ref STARTUPINFOEX sInfoEx, ref IntPtr lpValue) {
             var lpSize = IntPtr.Zero;
             var success = Kernel32.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
+
             if (success || lpSize == IntPtr.Zero)
                 return false;
 
             sInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+
             success = Kernel32.InitializeProcThreadAttributeList(sInfoEx.lpAttributeList, 1, 0, ref lpSize);
+
             if (!success)
                 return false;
 
-            // This value should persist until the attribute list is destroyed using the DeleteProcThreadAttributeList function
+            // This value should persist until the attribute list is
+            // destroyed using the DeleteProcThreadAttributeList function
             lpValue = Marshal.AllocHGlobal(IntPtr.Size);
             Marshal.WriteIntPtr(lpValue, parentHandle);
-
 
             success = Kernel32.UpdateProcThreadAttribute(
                 sInfoEx.lpAttributeList,
@@ -259,142 +262,168 @@ namespace Dispatcher {
                 lpValue,
                 (IntPtr)IntPtr.Size,
                 IntPtr.Zero,
-                IntPtr.Zero);
+                IntPtr.Zero
+            );
 
             return success;
         }
 
-        private static bool ExtractCommandLine() {
-            string dispatcher = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
-            string dispatcher_dir = Path.GetDirectoryName(dispatcher);
-            cwd = null; //inherit
-            as_service = false;
-            as_desktop_user = false;
-            use_job = true;
-            uwf_servicing_disabled = false;
+        private static bool ExtractCommandLine()
+        {
+            string dispatcher         = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
+            string dispatcher_dir     = Path.GetDirectoryName(dispatcher);
+            cwd                       = null; // inherit
+            as_service                = false;
+            as_desktop_user           = false;
+            use_job                   = true;
+            uwf_servicing_disabled    = false;
+            has_config_dir            = false;
+
+            // If Dispatcher Configuration directory has not been set via the
+            // environment variable, we then go looking for it in the base
+            // directory of the dispatcher executable and the home directory.
+            if (dispatcherConfigDir == null)
+            {
+                string path1 = dispatcher_dir + "\\" + Program.configDirName;
+                string path2 = "C:\\Users\\" + Program.currentUser + "\\." + Program.configDirName;
+
+                if (Directory.Exists(path1))
+                    dispatcherConfigDir = path1;
+                else if (Directory.Exists(path2))
+                    dispatcherConfigDir = path2;
+            }
 
             restart_on_network_change = false;
-            detached = false;
+            detached                  = false;
 
-            args = String.Empty;
-            use_showwindow = !DISPACHER_WIN;
+            args                      = String.Empty;
+            use_showwindow            = !DISPACHER_WIN;
 
-            var config = ConfigurationParser.loadConfig();
+            var config                = ConfigurationParser.loadConfig();
 
-            string dispatched_cmd = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+            string pathKey            = "PATH";
+            string exePathFlavor      = Environment.GetEnvironmentVariable("DISPATCHER_" + Program.dispatched_cmd + "_FLAVOR");
 
-            string pathKey = "PATH";
-            string exePathFlavor = Environment.GetEnvironmentVariable("DISPATCHER_" + dispatched_cmd + "_FLAVOR");
-
-            if(!String.IsNullOrEmpty(exePathFlavor))
-              pathKey = "PATH_" + exePathFlavor;;
+            if (!String.IsNullOrEmpty(exePathFlavor))
+                pathKey = "PATH_" + exePathFlavor;;
 
             if (!config.ContainsKey(pathKey))
             {
                 Console.Error.WriteLine("Cannot resolve cmd");
                 return false;
             }
+
             if (config.ContainsKey(FLAG_USE_SHOWWINDOW))
                 use_showwindow = toBool(config[FLAG_USE_SHOWWINDOW]);
-
 
             exePath = Environment.ExpandEnvironmentVariables(config[pathKey]);
 
             string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
             if (File.Exists(exefoo))
-                exePath = exefoo; //let windows resolve it
-            
+                exePath = exefoo; // Let Windows resolve it
+
             Dictionary<string, string> replaces = new Dictionary<string, string> {
-                {"%dwd%", dispatcher_dir},
-                {"%Y%",  DateTime.Now.ToString("yyyy")},
-                {"%m%", DateTime.Now.ToString("MM")},
-                {"%d%", DateTime.Now.ToString("dd")},
-                {"%H%", DateTime.Now.ToString("HH")},
-                {"%i%", DateTime.Now.ToString("mm")},
-                {"%s%", DateTime.Now.ToString("ss")},
+                { "%dwd%", dispatcher_dir                },
+                { "%Y%",   DateTime.Now.ToString("yyyy") },
+                { "%m%",   DateTime.Now.ToString("MM")   },
+                { "%d%",   DateTime.Now.ToString("dd")   },
+                { "%H%",   DateTime.Now.ToString("HH")   },
+                { "%i%",   DateTime.Now.ToString("mm")   },
+                { "%s%",   DateTime.Now.ToString("ss")   },
             };
 
             List<string> keys = new List<string>(config.Keys);
             keys.Sort();
 
-            foreach (string key in keys) {
+            foreach (string key in keys)
+            {
                 string value = config[key];
                 value = Replace(value, replaces);
                 value = Environment.ExpandEnvironmentVariables(value);
+
                 if (key.StartsWith("ARGV"))
                     args += EncodeParameterArgument(value) + " ";
+
                 if (key.StartsWith("ENV_"))
                     envs[key.Remove(0, 4)] = value;
+
                 if (key == "PRESTART_CMD")
                     execPreCmd = value;
+
                 if (key == "CWD")
                     cwd = value;
+
                 if (key == "UWF_SERVICING_DISABLED")
                     uwf_servicing_disabled =  toBool(value);
 
-                if(key == "UWF_SERVICING_DETECT" || key == "AS_SERVICE") {
-                  if(UWFManagement.servicingEnabled())
-                    envs["UWF_SERVICING_ENABLED"] =  "true";
+                if (key == "UWF_SERVICING_DETECT" || key == "AS_SERVICE")
+                {
+                    if (UWFManagement.servicingEnabled())
+                        envs["UWF_SERVICING_ENABLED"] =  "true";
                 }
 
-                if (key == "AS_SERVICE") {
+                if (key == "AS_SERVICE")
+                {
                     as_service = value == "auto" ? ProcessExtensions.isService() : toBool(value);
 
-                    if(value == "auto" && as_service)
-                      envs["DISPATCHED_SERVICE_MODE"] = "true";
+                    if (value == "auto" && as_service)
+                        envs["DISPATCHED_SERVICE_MODE"] = "true";
+                }
 
-                } if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
+                if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
                     restart_on_network_change = true;
-                if (key == "AS_DESKTOP_USER") {
+
+                if (key == "AS_DESKTOP_USER")
                     as_desktop_user = value == "auto" ? ProcessExtensions.isService() : toBool(value);
-                } if (key == "OUTPUT")
+
+                if (key == "OUTPUT")
                     logsPath = value;
-                if(key == "USE_JOB")
+
+                if (key == "USE_JOB")
                     use_job = toBool(value);
-                if(key == "DETACHED")
+
+                if (key == "DETACHED")
                     detached = toBool(value);
             }
+
             var argv = System.Environment.GetCommandLineArgs();
 
-            for(var i = 1; i < argv.Length; i++) {
+            for (var i = 1; i < argv.Length; i++)
+            {
                 string value = argv[i];
                 args += EncodeParameterArgument(value) + " ";
             }
 
             return true;
         }
-        public static string Replace(string str, Dictionary<string, string> dict) {
+
+        public static string Replace(string str, Dictionary<string, string> dict)
+        {
             foreach (KeyValuePair<string, string> replacement in dict)
                 str = str.Replace(replacement.Key, replacement.Value);
             return str;
         }
 
-        public static bool toBool(string str) {
-          return !(String.IsNullOrEmpty(str) || str == "false" || str == "0");
+        public static bool toBool(string str)
+        {
+            return !(String.IsNullOrEmpty(str) || str == "false" || str == "0");
         }
-        
 
+        public static string EncodeParameterArgument(string value)
+        {
+            if (String.IsNullOrEmpty(value))
+                return "\"\"";
 
-      public static string EncodeParameterArgument(string value)
-      {
-          if(String.IsNullOrEmpty(value))
-              return "\"\"";
+            if (Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$"))
+                return value;
 
-          if(Regex.IsMatch(value, "^[a-zA-Z0-9_./:^,=-]+$"))
+            value = Regex.Replace(value, @"(\\*)" + "\"", @"$1\$0");
+            value = Regex.Replace(value, @"^(.*\s.*?)(\\*)$", "\"$1$2$2\"");
+
             return value;
-
-          value = Regex.Replace(value, @"(\\*)" + "\"", @"$1\$0");
-          value = Regex.Replace(value, @"^(.*\s.*?)(\\*)$", "\"$1$2$2\"");
-          return value;
-      }
-
-
-
-
-
+        }
 
     }
-
 
     public class ConfigurationParser
     {
@@ -403,14 +432,31 @@ namespace Dispatcher {
             Dictionary<string, string> config = new Dictionary<string, string>();
 
             string dispatcher_path = Path.GetFullPath(Process.GetCurrentProcess().MainModule.FileName);
-            string dispatcher_dir = Path.GetDirectoryName(dispatcher_path);
+            string dispatcher_dir  = Path.GetDirectoryName(dispatcher_path);
             string dispatcher_name = Path.GetFileNameWithoutExtension(dispatcher_path);
 
             List<string> files = new List<string>();
+
+            // NOTE(oxou): If the config exists in the configuration directory
+            // that matches our command name, only then do we add it to the
+            // files list.  It must be noted that this approach is different
+            // from the below, where we scan for all files within the .config.d
+            // directory.
+            if (Program.dispatcherConfigDir != null)
+            {
+                if (Directory.Exists(Program.dispatcherConfigDir))
+                {
+                    string file_path = Program.dispatcherConfigDir + "\\" + Program.dispatched_cmd;
+                    files.Add(file_path + ".config");
+                    files.Add(file_path + ".exe.config");
+                }
+            }
+
             files.Add(Path.Combine(dispatcher_dir, dispatcher_name + ".config"));
             files.Add(Path.Combine(dispatcher_dir, dispatcher_name + ".exe.config"));
 
             string dispatcher_conf = Path.Combine(dispatcher_dir, dispatcher_name + ".config.d");
+
             if (Directory.Exists(dispatcher_conf))
             {
                 string[] dirs = Directory.GetFiles(dispatcher_conf, "*.config");
@@ -424,26 +470,24 @@ namespace Dispatcher {
                 {
                     if (!File.Exists(config_file))
                         continue;
+
                     XmlDocument doc = new XmlDocument();
                     doc.Load(config_file);
                     XmlNodeList nodeList;
                     XmlNode root = doc.DocumentElement;
                     nodeList = root.SelectNodes("/configuration/appSettings/add[@key][@value]");
-                    //Change the price on the books.
+
                     foreach (XmlNode addd in nodeList)
                         config[addd.Attributes["key"].Value] = addd.Attributes["value"].Value;
                 }
                 catch { }
             }
 
-
             return config;
         }
-
     }
 
     public class Service1 : ServiceBase {
-
         protected Thread t;
         private static int delay = 1000;
 
@@ -451,9 +495,9 @@ namespace Dispatcher {
 
         static void AddressChangedCallback(object sender, EventArgs e)
         {
-            lock (block) 
+            lock (block)
             {
-                Thread.Sleep(1500); //wait for network interface to be ready
+                Thread.Sleep(1500); // Wait for network interface to be ready
                 Monitor.PulseAll(block);
             }
             delay = 1000;
@@ -470,7 +514,7 @@ namespace Dispatcher {
 
             t.Start();
 
-            if(Program.restart_on_network_change)
+            if (Program.restart_on_network_change)
                 NetworkChange.NetworkAddressChanged += new NetworkAddressChangedEventHandler(AddressChangedCallback);
         }
 
@@ -499,18 +543,16 @@ namespace Dispatcher {
             }
         }
 
-
         protected override void OnStop()
         {
-
-          t.Abort();
-          try {
-            Process remote= Process.GetProcessById(Program.pInfo.dwProcessId);
-            remote.Kill();
-          } catch(Exception err) { }
+            t.Abort();
+            try
+            {
+                Process remote = Process.GetProcessById(Program.pInfo.dwProcessId);
+                remote.Kill();
+            }
+            catch (Exception e) { }
         }
 
     }
 }
-
-
