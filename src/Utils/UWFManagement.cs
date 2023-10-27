@@ -1,5 +1,6 @@
 using System;
 using System.Management;
+using System.Threading;
 
 namespace Dispatcher
 {
@@ -7,33 +8,39 @@ namespace Dispatcher
     public class UWFManagement
     {
 
-        // return Whether or not servicing mode is currently enabled
+       // return Whether or not servicing mode is currently enabled
 
-        public static bool servicingEnabled()
+       public static bool servicingEnabled()
         {
             var scope = new ManagementScope(@"root\standardcimv2\embedded");
             var uwfClass = new ManagementClass(scope.Path.Path, "UWF_Servicing", null);
 
-            try
-            {
-                foreach (ManagementObject instance in uwfClass.GetInstances())
-                {
-                    var currentSession = Convert.ToBoolean(instance.GetPropertyValue("CurrentSession").ToString());
-                    if (!currentSession)
-                        continue;
+            bool servicingEnabled = false;
 
-                    return Convert.ToBoolean(instance.GetPropertyValue("ServicingEnabled").ToString());
-                }
+            AutoResetEvent operationComplete = new AutoResetEvent(false);
+
+            Thread watchdogThread = new Thread(() => {
+                if (!operationComplete.WaitOne(10000))
+                    Environment.Exit(1);
+            });
+
+            try  {
+              watchdogThread.Start();
+
+              foreach (ManagementObject instance in uwfClass.GetInstances()) {
+                  var currentSession = Convert.ToBoolean(instance.GetPropertyValue("CurrentSession").ToString());
+                  if (!currentSession)
+                      continue;
+
+                  servicingEnabled = Convert.ToBoolean(instance.GetPropertyValue("ServicingEnabled").ToString());
+              }
+            } catch (Exception) { }
+            finally {
+              operationComplete.Set();
+              watchdogThread.Join();
             }
-            catch (Exception)
-            {
 
-            }
-
-            return false;
+            return servicingEnabled;
         }
-
     }
 }
-
-
