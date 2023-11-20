@@ -287,8 +287,6 @@ namespace murrayju.ProcessExtensions
             string args = "", string workDir = null, bool visible = true, string logsPath = null) {
         IntPtr userToken = IntPtr.Zero;
 
-        Console.Error.WriteLine("Logon {0}:{1}", username, password);
-
         // Attempt to log in user
         if (!LogonUser(username, ".", password, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, ref userToken))
           throw new Exception("Invalid logon auth");
