@@ -32,11 +32,14 @@ namespace Dispatcher {
         static string args;
         static string cwd;
         static string execPreCmd;
+        static string username;
+        static string password;
 
         static string logsPath = "";
         static bool use_showwindow;
         static bool as_service;
         static bool as_desktop_user;
+        static bool as_user;
         public static bool uwf_servicing_disabled;
         static bool use_job;
         static bool detached;
@@ -101,6 +104,32 @@ namespace Dispatcher {
 
 
                 pInfo = ProcessExtensions.StartProcessAsCurrentUser(exePath, envs, args, cwd, !use_showwindow, logsPath);
+
+                if (use_job)
+                {
+                    var job2 = new Job();
+                    job2.AddProcess(pInfo.hProcess);
+                }
+
+                Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+                Kernel32.GetExitCodeProcess(pInfo.hProcess, out exitCode);
+                Kernel32.CloseHandle(pInfo.hThread);
+                Kernel32.CloseHandle(pInfo.hProcess);
+                return;
+            }
+
+            if (as_user)
+            {
+                if(execPreCmd != null) {
+                    pInfo = ProcessExtensions.StartProcessAsLogonUser(username, password, execPreCmd, envs, "", cwd, !use_showwindow, logsPath);
+                    Kernel32.WaitForSingleObject(pInfo.hProcess, Kernel32.INFINITE);
+                    Kernel32.CloseHandle(pInfo.hThread);
+                    Kernel32.CloseHandle(pInfo.hProcess);
+                }
+
+
+
+                pInfo = ProcessExtensions.StartProcessAsLogonUser(username, password, exePath, envs, args, cwd, !use_showwindow, logsPath);
 
                 if (use_job)
                 {
@@ -270,6 +299,7 @@ namespace Dispatcher {
             cwd = null; //inherit
             as_service = false;
             as_desktop_user = false;
+            as_user = false;
             use_job = true;
             uwf_servicing_disabled = false;
 
@@ -285,6 +315,8 @@ namespace Dispatcher {
 
             string pathKey = "PATH";
             string exePathFlavor = Environment.GetEnvironmentVariable("DISPATCHER_" + dispatched_cmd + "_FLAVOR");
+            username = Environment.GetEnvironmentVariable("DISPATCHER_USERNAME");
+            password = Environment.GetEnvironmentVariable("DISPATCHER_PASSWORD");
 
             if(!String.IsNullOrEmpty(exePathFlavor))
               pathKey = "PATH_" + exePathFlavor;;
@@ -329,6 +361,13 @@ namespace Dispatcher {
                     execPreCmd = value;
                 if (key == "CWD")
                     cwd = value;
+                if (key == "AS_USER")
+                    as_user = toBool(value);
+                if (key == "USERNAME")
+                    username = value;
+                if (key == "PASSWORD")
+                    password = value;
+
                 if (key == "UWF_SERVICING_DISABLED")
                     uwf_servicing_disabled =  toBool(value);
 

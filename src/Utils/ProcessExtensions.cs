@@ -14,9 +14,21 @@ namespace murrayju.ProcessExtensions
         private const uint INVALID_SESSION_ID = 0xFFFFFFFF;
         private static readonly IntPtr WTS_CURRENT_SERVER_HANDLE = IntPtr.Zero;
 
+        private const int LOGON32_LOGON_INTERACTIVE = 2;
+        private const int LOGON32_PROVIDER_DEFAULT = 0;
+
+
         #endregion
 
         #region DllImports
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool LogonUser(
+            String lpszUsername, 
+            String lpszDomain, 
+            String lpszPassword,
+            int dwLogonType, 
+            int dwLogonProvider, 
+            ref IntPtr phToken);
 
         [DllImport("advapi32.dll", EntryPoint = "CreateProcessAsUser", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
         private static extern bool CreateProcessAsUser(
@@ -255,12 +267,46 @@ namespace murrayju.ProcessExtensions
           return userName == "S-1-5-18" || userName == "S-1-5-19" || userName == "S-1-5-20";
       }
 
+      internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs,
+              string args = "", string workDir = null, bool visible = true, string logsPath = null) {
+
+          var hUserToken = IntPtr.Zero;
+
+          if (!GetSessionUserToken(ref hUserToken))
+            throw new Exception("StartProcessAsCurrentUser: GetSessionUserToken failed.");
+
+          try {
+            return StartProcessAsUser(hUserToken, appPath, envs, args, workDir, visible, logsPath);
+          } finally {
+            CloseHandle(hUserToken);
+          }
+      }
 
 
-    internal static PROCESS_INFORMATION StartProcessAsCurrentUser(string appPath, Dictionary<string, string> envs,
+    internal static PROCESS_INFORMATION StartProcessAsLogonUser(string username, string password, string appPath, Dictionary<string, string> envs,
+            string args = "", string workDir = null, bool visible = true, string logsPath = null) {
+        IntPtr userToken = IntPtr.Zero;
+
+        Console.Error.WriteLine("Logon {0}:{1}", username, password);
+
+        // Attempt to log in user
+        if (!LogonUser(username, ".", password, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, ref userToken))
+          throw new Exception("Invalid logon auth");
+
+
+
+        try {
+          return StartProcessAsUser(userToken, appPath, envs, args, workDir, visible, logsPath);
+        } finally {
+          CloseHandle(userToken);
+        }
+    }
+
+
+
+      internal static PROCESS_INFORMATION StartProcessAsUser(IntPtr hUserToken, string appPath, Dictionary<string, string> envs,
             string args = "", string workDir = null, bool visible = true, string logsPath = null)
         {
-            var hUserToken = IntPtr.Zero;
             var startInfo = new STARTUPINFO();
             var procInfo = new PROCESS_INFORMATION();
             var pEnv = IntPtr.Zero;
@@ -272,13 +318,9 @@ namespace murrayju.ProcessExtensions
             startInfo.cb = Marshal.SizeOf(typeof(STARTUPINFO));
             IntPtr hLogs = IntPtr.Zero;
 
+
             try
             {
-                if (!GetSessionUserToken(ref hUserToken))
-                {
-                    throw new Exception("StartProcessAsCurrentUser: GetSessionUserToken failed.");
-                }
-
                 uint dwCreationFlags = Kernel32.CREATE_UNICODE_ENVIRONMENT | (uint)(visible ? Kernel32.CREATE_NEW_CONSOLE : Kernel32.CREATE_NO_WINDOW);
                 dwCreationFlags |= Kernel32.CREATE_BREAKAWAY_FROM_JOB;
 
@@ -296,7 +338,6 @@ namespace murrayju.ProcessExtensions
                     startInfo.hStdOutput = hLogs;
                     startInfo.hStdError = hLogs;
                 }
-
 
                 if (!CreateEnvironmentBlock(ref pEnv, hUserToken, false))
                 {
@@ -337,13 +378,7 @@ namespace murrayju.ProcessExtensions
 
 
                 iResultOfCreateProcessAsUser = Marshal.GetLastWin32Error();
-            }
-            finally
-            {
-
-                CloseHandle(hUserToken);
-
-
+            } finally {
                 if (pEnv != IntPtr.Zero)
                 {
                     DestroyEnvironmentBlock(pEnv);
