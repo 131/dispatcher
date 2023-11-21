@@ -21,6 +21,24 @@ namespace murrayju.ProcessExtensions
         #endregion
 
         #region DllImports
+
+
+      [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Auto)]
+      public static extern bool LoadUserProfile(IntPtr hToken, ref PROFILEINFO lpProfileInfo);
+
+      public struct PROFILEINFO
+      {
+          public int dwSize;
+          public int dwFlags;
+          public string lpUserName;
+          public string lpProfilePath;
+          public string lpDefaultPath;
+          public string lpServerName;
+          public string lpPolicyPath;
+          public IntPtr hProfile;
+      }
+
+
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern bool LogonUser(
             String lpszUsername, 
@@ -290,6 +308,17 @@ namespace murrayju.ProcessExtensions
         // Attempt to log in user
         if (!LogonUser(username, ".", password, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, ref userToken))
           throw new Exception("Invalid logon auth");
+
+
+        PROFILEINFO profileInfo = new PROFILEINFO {
+              dwSize = Marshal.SizeOf(typeof(PROFILEINFO)),
+              lpUserName = username,
+              dwFlags = 1
+        };
+
+        bool loadSuccess = LoadUserProfile(userToken, ref profileInfo);
+        if (!loadSuccess)
+          throw new Exception("Could not load profile");
 
 
 
