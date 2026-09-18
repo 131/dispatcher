@@ -72,6 +72,7 @@
     <Compile Include="Utils\ProcessExtensions.cs" />
     <Compile Include="Utils\ParentProcessUtilities.cs" />
     <Compile Include="Utils\Kernel32.cs" />
+    <Compile Include="Utils\PackagedApplication.cs" />
     <Compile Include="Utils\UWFManagement.cs" />
   </ItemGroup>
   <ItemGroup>

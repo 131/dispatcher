@@ -83,7 +83,7 @@ if [[ ! -z "$dobuild" ]] ; then
   args=("${args[@]}" /reference:$v2\\mscorlib.dll /reference:$v2\\System.dll /reference:$v2\\System.Xml.dll /reference:$v2\\System.ServiceProcess.dll /reference:$v2\\System.Management.dll)
   args=("${args[@]}" /filealign:512 /utf8output)
 
-  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs src\\Utils\\UWFManagement.cs)
+  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Utils\\PackagedApplication.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs src\\Utils\\UWFManagement.cs)
 
   csc.exe "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
   csc.exe "${args[@]}" /platform:x86                       /target:exe    /out:$out_cmd_x86 "${files[@]}"

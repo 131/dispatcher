@@ -29,6 +29,7 @@ namespace Dispatcher {
   
         const string FLAG_USE_SHOWWINDOW = "USE_SHOWWINDOW";
         static string exePath;
+        static string appName;
         static string args;
         static string cwd;
         static string execPreCmd;
@@ -61,17 +62,35 @@ namespace Dispatcher {
 
         static void Main()
         {
+            try { MainCore(); }
+            catch (Exception error) {
+                Console.Error.WriteLine("dispatcher: " + error.Message);
+                Environment.Exit(1);
+            }
+        }
+
+        static void MainCore()
+        {
+            string[] commandLine = Environment.GetCommandLineArgs();
+            if (commandLine.Length == 4 && commandLine[1] == "--dispatcher-package-helper") {
+                Environment.Exit(PackagedApplication.Helper(commandLine[2], commandLine[3]));
+                return;
+            }
 
             Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
-            envs = new Dictionary<string, string>();
+            envs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             envs["Path"] = Environment.GetEnvironmentVariable("PATH");
 
             if (!ExtractCommandLine())
                 Environment.Exit(1);
 
-            string exeDir = Path.GetDirectoryName(exePath);
-            envs["Path"] = envs["Path"] + ";" + exeDir;
+            if (exePath != null) {
+                string exeDir = Path.GetDirectoryName(exePath);
+                envs["Path"] = envs["Path"] + ";" + exeDir;
+            }
+            if (appName != null && (as_service || as_user || as_desktop_user || restart_on_network_change))
+                throw new NotSupportedException("APP_NAME currently supports the interactive Windows user only; service and alternate-user modes are not supported.");
 
             Environment.SetEnvironmentVariable("PATH", null);
             foreach (KeyValuePair<string, string> env in envs)
@@ -91,6 +110,16 @@ namespace Dispatcher {
         }
 
         public static void Run() {
+
+            if (appName != null) {
+                if (execPreCmd != null) {
+                    ProcessStartInfo prestart = new ProcessStartInfo(execPreCmd);
+                    prestart.WorkingDirectory = cwd;
+                    using (Process process = Process.Start(prestart)) { process.WaitForExit(); }
+                }
+                exitCode = PackagedApplication.Run(appName, args, cwd, use_showwindow, use_job, detached, logsPath);
+                return;
+            }
 
             if (as_desktop_user)
             {
@@ -321,7 +350,10 @@ namespace Dispatcher {
             if(!String.IsNullOrEmpty(exePathFlavor))
               pathKey = "PATH_" + exePathFlavor;;
 
-            if (!config.ContainsKey(pathKey))
+            bool hasApp = config.ContainsKey("APP_NAME");
+            if (hasApp && (config.ContainsKey("PATH") || config.ContainsKey(pathKey)))
+                throw new ArgumentException("Specify APP_NAME or PATH, not both.");
+            if (!hasApp && !config.ContainsKey(pathKey))
             {
                 Console.Error.WriteLine("Cannot resolve cmd");
                 return false;
@@ -330,11 +362,17 @@ namespace Dispatcher {
                 use_showwindow = toBool(config[FLAG_USE_SHOWWINDOW]);
 
 
-            exePath = Environment.ExpandEnvironmentVariables(config[pathKey]);
-
-            string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
-            if (File.Exists(exefoo))
-                exePath = exefoo; //let windows resolve it
+            appName = null;
+            exePath = null;
+            if (hasApp) {
+                appName = Environment.ExpandEnvironmentVariables(config["APP_NAME"]);
+                PackagedApplication.ValidateAppName(appName);
+            } else {
+                exePath = Environment.ExpandEnvironmentVariables(config[pathKey]);
+                string exefoo = Path.GetFullPath(Path.Combine(dispatcher_dir, exePath));
+                if (File.Exists(exefoo))
+                    exePath = exefoo; //let windows resolve it
+            }
             
             Dictionary<string, string> replaces = new Dictionary<string, string> {
                 {"%dwd%", dispatcher_dir},

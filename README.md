@@ -25,6 +25,50 @@ Configuration file syntax is :
 </configuration>
 ```
 
+## Packaged desktop applications
+
+Use `APP_NAME` instead of `PATH` for an installed desktop / FullTrust package:
+
+```xml
+<configuration>
+  <appSettings>
+    <add key="APP_NAME" value="OpenAI.Codex_2p2nqsd0c76g0!App"/>
+    <add key="ENV_OPENAI_ENT_KEY" value="REPLACE_WITH_YOUR_KEY"/>
+  </appSettings>
+</configuration>
+```
+
+`APP_NAME` is the `PackageFamilyName!ApplicationId`, independent of the installed
+version. `ENV_*`, `ARGV*`, additional command-line arguments and `CWD` work with
+this mode. The target receives the dispatcher's complete environment, including
+configured overrides. Without `CWD`, it starts in the dispatcher's current directory.
+An application can change its own directory after startup; Codex currently does so.
+
+`APP_NAME` runs entirely in C# using native Windows APIs. It resolves the installed
+package and its manifest, then calls `IDesktopAppXActivator` through COM to start
+the same dispatcher executable in helper mode inside the package context. The
+helper creates the target with `CreateProcessW`; the original dispatcher monitors
+the target. No PowerShell process, Appx module, or runtime script is required.
+
+Environment values travel through a named pipe restricted to the current Windows
+user. The dispatcher allows concurrent launches of the same executable. The app
+controls its own instance policy: if it redirects a launch to an existing process,
+that process retains its original environment. For the tested Codex build, separate
+`CODEX_HOME` and `--user-data-dir` values allowed two profiles to run simultaneously;
+`CODEX_HOME` alone did not isolate the UI profile.
+
+This mode currently supports the interactive Windows user; service and
+alternate-user modes are rejected. The package bootstrap uses an internal Windows
+COM interface, so compatibility with future Windows versions is not guaranteed.
+Job assignment is best effort. `DETACHED=true` starts independently without waiting;
+otherwise the dispatcher waits for the target and returns its exit code. The
+bootstrap uses the activation options behind Windows' desktop-package diagnostic
+launcher, whose context can differ from an ordinary Start-menu launch. PowerShell
+is used only by the optional build/test scripts in `tests/packaged/`.
+
+See [OFFLOAD.md](OFFLOAD.md) for implementation details and validation, and
+[the packaged-launch tests](tests/packaged/run.ps1) for reproducible checks.
+
 # Download
 Find all downloads in [GitHub Releases](https://github.com/131/dispatcher/releases)
 
@@ -58,8 +102,8 @@ C:\dispatchedbin\php.exe.config => C:\Program Files x86\php\bin\php.exe
 # Advanced usage, few things to understand
 * There is a fundamental difference in console applications  & desktop applications for windows
 * therefore [dispatcher](https://github.com/131/dispatcher) comes in 2 flavors - respectively dispatcher_cmd.exe &  dispatcher_win.exe.
-* You cannot spawn x64 executables located in c:\windows\system32 from a win32 application.
-* therefore [dispatcher.exe](https://github.com/131/dispatcher) is available in 2 architectures : x32 & x64
+* A 32-bit process can launch a 64-bit executable. On 64-bit Windows, WOW64 normally redirects a 32-bit process's `System32` accesses to `SysWOW64`; `Sysnative` provides access to the native system directory.
+* Dispatcher is available in x86 and x64 builds. The native `APP_NAME` bootstrap has been tested with both on x64 Windows.
 
 ## Forced args
 You can force additional args (injected before args that might have been sent toward `[dispatched].exe`
@@ -121,7 +165,7 @@ set DISPATCHER_NODE_FLAVOR=16 # will toggle node 16
 
 
 ## DETACHED flag
-When using dispatcher_win, you can use the `DETACHED` flag for the dispatcher NOT to wait for the child to exit.
+Set `DETACHED=true` to return without waiting for the child to exit. This option is available in both console and GUI builds.
 
 ```
 <?xml version="1.0" encoding="utf-8" ?>
@@ -160,7 +204,7 @@ Using the `PRESTART_CMD` flag make **dispatcher** run a command before another (
 ## Using dispatcher to run Windows service
 Using the `AS_SERVICE` flag make **dispatcher** expose a Windows Service compliant interface. (therefore, you can use **dispatcher** to register any nodejs/php/whaterver script as a service. You'll have to manage the registration by yourself - see [sc create](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create),[sc start](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-start), [sc stop](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-stop), ... APIs). Also, if needed, you can run a service in an interactive session (interact with desktop - use [murrayju CreateProcessAsUser](https://github.com/murrayju/CreateProcessAsUser) ).
 
-When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mode only if running as NT_AUTHORITY.
+With `AS_SERVICE=auto`, the dispatcher selects service mode when running as LocalSystem, LocalService, or NetworkService. Service mode is supported by the `PATH` branch; `APP_NAME` rejects it.
 
 
 ```
@@ -171,7 +215,7 @@ When using "auto" as value for `AS_SERVICE`, dispatcher will use the service mod
     <add key="ARGV0" value="main.js"/>
     <add key="AS_SERVICE" value="true"/>
 
-<!-- prevent execution during UWF servicing sessions ->
+<!-- prevent execution during UWF servicing sessions -->
     <add key="UWF_SERVICING_DISABLED" value="true"/>
 
 <!-- to run a service in interactive session -->
@@ -247,7 +291,15 @@ Using dispatcher.exe is a nifty way to create portable binaries out of shell scr
 
 
 # How does it work
-dispatcher use kernel32 Process spawn to force stdin, stdout & stderr handler to the forwarded process. Therefore, supports PIPE, Console or FILE as process handle (& all others handler). The dispatcher & the underlying process are bound to kernel32 Job group (tied together, you cannot kill one without the other). Exit code is forwarded.
+For `PATH`, the dispatcher creates the target through the Windows process APIs and
+forwards its standard handles, which can refer to pipes, console streams, or files.
+By default, the normal launch path uses a Windows job with kill-on-close behavior;
+`USE_JOB=false` and `DETACHED` change process lifetime handling. When waiting for
+the target, the dispatcher forwards its exit code.
+
+For `APP_NAME`, the C# dispatcher uses native COM activation to start its helper
+in the package context. The helper creates the target with its explicit
+environment, arguments, and working directory. Job assignment is best effort.
 
 
 # Running the command is slow
