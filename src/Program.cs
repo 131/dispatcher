@@ -584,7 +584,7 @@ namespace Dispatcher {
           try {
             Process remote= Process.GetProcessById(Program.pInfo.dwProcessId);
             remote.Kill();
-          } catch(Exception err) { }
+          } catch(Exception) { }
         }
 
     }
