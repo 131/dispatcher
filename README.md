@@ -39,43 +39,17 @@ Use `APP_NAME` instead of `PATH` for an installed desktop / FullTrust package:
 </configuration>
 ```
 
-`APP_NAME` is the `PackageFamilyName!ApplicationId`, independent of the installed
-version. `ENV_*`, `ARGV*`, additional command-line arguments and `CWD` work with
-this mode. The target receives the dispatcher's complete environment, including
-configured overrides. Without `CWD`, it starts in the dispatcher's current directory.
-An application can change its own directory after startup; Codex currently does so.
+`APP_NAME` is the `PackageFamilyName!ApplicationId`; it stays the same when the
+application is updated. Use it instead of `PATH`.
 
-`APP_NAME` runs entirely in C# using native Windows APIs. It resolves the installed
-package and its manifest, then calls `IDesktopAppXActivator` through COM to start
-the same dispatcher executable in helper mode inside the package context. The
-helper creates the target with `CreateProcessW`; the original dispatcher monitors
-the target. No PowerShell process, Appx module, or runtime script is required.
+`ENV_*`, `ARGV*`, command-line arguments, `CWD` and `OUTPUT` work as usual. The
+application inherits the dispatcher's environment, including your overrides.
+Dispatcher waits for it to exit and returns its exit code; set `DETACHED=true`
+to launch without waiting.
 
-Environment values travel through a named pipe restricted to the current Windows
-user, with network logons denied. The .NET Framework 4.8 transport uses
-`NamedPipeServerStream` / `NamedPipeClientStream` and asynchronous I/O with
-20-second operation deadlines. The parent checks the connecting process's PID
-before sending the environment. It opens the target's process handle before
-authorizing the helper to resume the suspended target; a cancelled or disconnected
-launch terminates that suspended target.
-
-The dispatcher allows concurrent launches of the same executable. The app
-controls its own instance policy: if it redirects a launch to an existing process,
-that process retains its original environment. For the tested Codex build, separate
-`CODEX_HOME` and `--user-data-dir` values allowed two profiles to run simultaneously;
-`CODEX_HOME` alone did not isolate the UI profile.
-
-This mode currently supports the interactive Windows user; service and
-alternate-user modes are rejected. The package bootstrap uses an internal Windows
-COM interface, so compatibility with future Windows versions is not guaranteed.
-Job assignment is best effort. `DETACHED=true` starts independently without waiting;
-otherwise the dispatcher waits for the target and returns its exit code. The
-bootstrap uses the activation options behind Windows' desktop-package diagnostic
-launcher, whose context can differ from an ordinary Start-menu launch. PowerShell
-is used only by the optional build/test scripts in `tests/packaged/`.
-
-See [OFFLOAD.md](OFFLOAD.md) for implementation details and validation, and
-[the packaged-launch tests](tests/packaged/run.ps1) for reproducible checks.
+This mode supports the current Windows user only, not services or alternate-user
+launches. If the application reuses an existing instance, that instance keeps
+its original environment.
 
 # Download
 Find all downloads in [GitHub Releases](https://github.com/131/dispatcher/releases)
@@ -359,16 +333,10 @@ Create to dispatcher (php5.exe & php7.exe)
 Using dispatcher.exe is a nifty way to create portable binaries out of shell scripts (.bat,.js,.php)
 
 
-# How does it work
-For `PATH`, the dispatcher creates the target through the Windows process APIs and
-forwards its standard handles, which can refer to pipes, console streams, or files.
-By default, the normal launch path uses a Windows job with kill-on-close behavior;
-`USE_JOB=false` and `DETACHED` change process lifetime handling. When waiting for
-the target, the dispatcher forwards its exit code.
-
-For `APP_NAME`, the C# dispatcher uses native COM activation to start its helper
-in the package context. The helper creates the target with its explicit
-environment, arguments, and working directory. Job assignment is best effort.
+# Process lifetime
+Dispatcher normally waits for the target and returns its exit code.
+`DETACHED=true` launches without waiting. For `PATH` launches, `USE_JOB=false`
+allows the target to keep running if the dispatcher is terminated.
 
 
 # Running the command is slow
