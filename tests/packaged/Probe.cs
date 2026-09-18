@@ -4,7 +4,10 @@ using System.Xml;
 
 class PackageProbe {
     static int Main(string[] args) {
-        if (args.Length == 1 && args[0] == "--hold") { System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite); return 0; }
+        if (args.Length > 0 && args[0] == "--hold") {
+            if (args.Length > 1) File.WriteAllText(args[1], System.Diagnostics.Process.GetCurrentProcess().Id.ToString());
+            System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite); return 0;
+        }
         XmlDocument document = new XmlDocument();
         XmlElement root = document.CreateElement("probe"); document.AppendChild(root);
         root.SetAttribute("cwd", Environment.CurrentDirectory);

@@ -2,7 +2,7 @@ name: test
 on: [push]
 jobs:
   test:
-    runs-on: windows-2019
+    runs-on: windows-2022
     environment: production
     defaults:
       run:
@@ -12,13 +12,12 @@ jobs:
       with:
         path-type: inherit
         install: rsync
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: '12.x'
-    - run: powershell Install-WindowsFeature Net-Framework-Core
-    - run: bash -x ./build --build --test
+        node-version: '22.x'
+    - run: bash ./build --build --test
       env:
         MSYS2_ARG_CONV_EXCL: "*"
-    - run: npm test
+    - run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tests/packaged/run.ps1
 

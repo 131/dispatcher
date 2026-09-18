@@ -12,7 +12,8 @@ Powerful process forwarder (or proxy) for Windows. It can be considered as a ope
 [chocolatey shimgen](https://chocolatey.org/docs/features-shim)
 
 # How to use
-Rename/duplicate `dispatcher.exe` to `[something].exe`.
+Download a dispatcher executable from Releases, or build it and choose one from
+`output/`. Rename/duplicate it to `[something].exe`.
 Write a `[something].config` file next to it to configure redirection.
 
 Configuration file syntax is :
@@ -51,7 +52,14 @@ helper creates the target with `CreateProcessW`; the original dispatcher monitor
 the target. No PowerShell process, Appx module, or runtime script is required.
 
 Environment values travel through a named pipe restricted to the current Windows
-user. The dispatcher allows concurrent launches of the same executable. The app
+user, with network logons denied. The .NET Framework 4.8 transport uses
+`NamedPipeServerStream` / `NamedPipeClientStream` and asynchronous I/O with
+20-second operation deadlines. The parent checks the connecting process's PID
+before sending the environment. It opens the target's process handle before
+authorizing the helper to resume the suspended target; a cancelled or disconnected
+launch terminates that suspended target.
+
+The dispatcher allows concurrent launches of the same executable. The app
 controls its own instance policy: if it redirects a launch to an existing process,
 that process retains its original environment. For the tested Codex build, separate
 `CODEX_HOME` and `--user-data-dir` values allowed two profiles to run simultaneously;
@@ -71,6 +79,67 @@ See [OFFLOAD.md](OFFLOAD.md) for implementation details and validation, and
 
 # Download
 Find all downloads in [GitHub Releases](https://github.com/131/dispatcher/releases)
+
+Dispatcher requires **.NET Framework 4.8 or later** on Windows. It uses the CLR 4
+runtime; .NET Framework 2.0/3.5 is no longer required or supported.
+
+## Building and testing
+
+On a Windows machine with .NET Framework 4.8 or later, the build uses the compiler
+already present in `C:\Windows\Microsoft.NET\Framework\v4.0.30319`.
+Assembly lookup prefers an explicit `NET48_REFERENCE_ASSEMBLIES` directory, then
+the installed Developer Pack's 4.8 reference DLLs, then the DLLs in the compiler's
+directory if the pack is absent. An invalid explicit directory is an error.
+No download, cache or environment setup is required. The packaged tests use the
+same lookup order.
+
+The executables declare a .NET Framework 4.8 target. When falling back to installed
+runtime DLLs, the available APIs follow that Framework version. Building the
+Visual Studio `.csproj` still uses the 4.8 targeting pack.
+
+Build from Bash on Windows or WSL:
+
+```bash
+./build --build
+```
+
+The generated files are kept under `output/` (ignored by Git):
+
+| Executable | Interface | Architecture |
+| --- | --- | --- |
+| `output/dispatcher_cmd.exe` | Console | x86 |
+| `output/dispatcher_cmd_x64.exe` | Console | x64 |
+| `output/dispatcher_win.exe` | GUI | x86 |
+| `output/dispatcher_win_x64.exe` | GUI | x64 |
+
+The build also prepares the autolock example in `output/examples/` from the GUI
+x64 executable and `examples/autolock.exe.config`.
+
+Run the tests from Windows PowerShell:
+
+```powershell
+.\tests\packaged\run.ps1
+npm install
+npm test
+```
+
+`npm test` uses the executables in `output/`; its temporary files go into
+`output/tests/legacy/`. The packaged tests keep each run under
+`output/tests/packaged/`. Visual Studio/MSBuild writes binaries to
+`output/msbuild/<Configuration>/<Platform>/` and intermediate files to
+`output/obj/<Configuration>/<Platform>/`.
+
+The Bash build invokes `csc.exe` directly and produces console and GUI executables
+for x86 and x64. `--sign` signs the four `output/dispatcher_*.exe` files, and
+`--test` runs the existing test suite. The release workflow uploads those four
+executables from `output/`, keeping their existing download filenames. The compiler's
+`v4.0.30319` directory name is shared by .NET Framework 4.x, including 4.8;
+the assembly metadata declares the 4.8 target.
+
+The executables can still be renamed and configured as described above; no
+additional runtime configuration file is needed to select CLR 4. If an existing
+`.exe.config` contains a `<startup>` section that selects `v2.0.50727`, replace it
+with `<startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.8"/></startup>`.
 
 
 # Motivation  - sample usage

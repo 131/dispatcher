@@ -1,2 +1,4 @@
+file:
+  - 'tests/setup.js'
 spec:
   - 'node_modules/dispatcher-tests/test/**.js'

@@ -1,7 +1,8 @@
 # APP_NAME implementation handoff
 
-Updated September 17, 2026, after replacing the runtime PowerShell bootstrap
-with direct native Windows APIs and COM, and validating the C# implementation.
+Updated September 18, 2026, after migrating to .NET Framework 4.8 and rewriting
+the package transport with managed named pipes and async/await. Package lookup
+and activation still use native Windows APIs and COM.
 
 ## Current status
 
@@ -54,8 +55,9 @@ installed package version. The dispatcher rejects configurations that select bot
    `IDesktopAppXActivator::ActivateWithOptions` to start the same dispatcher
    executable with `--dispatcher-package-helper` inside the package context.
 3. The parent C# process sends the complete target environment, arguments, and CWD
-   to that helper through a native named pipe restricted to the current Windows
-   user. Secret values are not placed in command-line arguments or temporary files.
+   to that helper through a managed named pipe restricted to the current Windows
+   user, denying network logons. Secret values are not placed in command-line
+   arguments or temporary files.
 4. The C# helper calls `CreateProcessW` with an explicit Unicode environment block
    and creates the target suspended. Its own environment is not implicitly merged
    into the target environment.
@@ -79,9 +81,19 @@ Without `CWD`, the target receives the dispatcher's current directory. Relative
 `CWD` values are resolved from that directory. An application may change its own
 working directory after startup; the tested Codex build does this.
 
-The implementation retains the existing framework references and build targets.
-Native pipes and `FileStream` avoid requiring newer .NET pipe APIs in the dispatcher.
-The new source is included in both `src/Dispatcher.csproj` and `build`.
+The project now targets .NET Framework 4.8. The Bash `build` script invokes
+`csc.exe` directly; the PowerShell packaged-test harness compiles its own probes.
+Both prefer `NET48_REFERENCE_ASSEMBLIES` when explicitly set, then the installed
+Developer Pack's 4.8 references, then the runtime DLLs in
+`C:\Windows\Microsoft.NET\Framework\v4.0.30319` if the pack is absent.
+An invalid explicit override fails. No download or setup is required. Assembly
+metadata declares 4.8; fallback builds expose the installed Framework's APIs.
+`PackagePipe.cs` owns managed pipe creation, protected ACLs,
+connection monitoring and asynchronous reads/writes with 20-second deadlines.
+The original BinaryReader/BinaryWriter protocol is preserved, including the
+inspection tools. The remaining pipe P/Invoke checks the connected client's PID
+before any environment data is sent. The source is also included in
+`src/Dispatcher.csproj`.
 
 ## Scope and limitations
 
@@ -107,7 +119,15 @@ The new source is included in both `src/Dispatcher.csproj` and `build`.
 
 ## Validation completed
 
-- Built all four variants: console and GUI, x86 and x64, after the native conversion.
+- The managed transport passes x86/x64 tests for connection timeouts, early helper
+  exit, stalled and partial reads, blocked writes, disconnection, fragmented
+  messages, Unicode and malformed string lengths.
+- Cancellation and parent disconnection before resume terminate the suspended
+  target without executing it. Detached targets survive the launcher's return.
+  These checks pass both normally and in the installed Codex package context.
+  A client with the wrong PID is rejected before receiving any data.
+- Rebuilt all four variants (console and GUI, x86 and x64) after the managed
+  transport rewrite. The Release/x64 `.csproj` build also passes.
 - Native package resolution and COM activation pass in x86 and x64; no Appx
   cmdlet participates in the package-context transport tests.
 - Exercised transport and target creation in x86/x64, both in an ordinary process
@@ -121,13 +141,16 @@ The new source is included in both `src/Dispatcher.csproj` and `build`.
 - Checked invalid configuration errors: malformed AUMID, `APP_NAME` with `PATH`,
   unsupported user mode, and a missing package. Each fails with a nonzero exit
   code and a useful message.
-- The ten existing `Initial test suite` tests pass for the `PATH` branch, arguments,
-  environment, CWD, and redirection. The older service/job suites were not required
-  for this change.
+- All 13 existing initial/job tests pass for the `PATH` branch, arguments,
+  environment, CWD, redirection and process lifetime. The two service tests are
+  skipped by the suite because this session is not elevated. The local npm launcher
+  is broken, so the installed Mocha entry point was run directly with Windows Node.
 - Inspected the real packaged `ChatGPT.exe` while it was still suspended:
   **ENV, ARGV, and CWD matched before any application code executed.**
   Repeated after the native conversion using both local profile configurations,
   an x64 console helper and an x86 GUI helper; configured ENV overrides matched.
+  Rechecked after the managed rewrite using the rebuilt x64 GUI dispatcher and
+  the public example configuration with the existing inspection script.
 - After startup, Codex retained ENV/ARGV but changed CWD to its installation
   directory. That change comes from application startup, not the dispatcher.
 
@@ -146,7 +169,16 @@ without printing their values, plus a synthetic Unicode argument and CWD. `Inspe
 configured values with a running process without printing secret values. The
 memory inspection scripts target x64 processes and require x64 PowerShell.
 
-## Current local installation
+## Local installation record (September 17)
+
+The September 18 .NET 4.8 builds are in `output/`; the build prepares the autolock
+example in `output/examples/`. Test builds and results are under `output/tests/`;
+MSBuild outputs and intermediates are under `output/msbuild/` and `output/obj/`.
+Signing and release uploads use `output/dispatcher_*.exe`.
+Pre-existing `src/bin/` and `src/obj/` artifacts were moved to
+`output/legacy-msbuild/`.
+The installation record below describes the preceding
+deployment of the local profile launchers.
 
 Directory: `D:\apps\bundle\bin`. These configurations were read during the
 preceding handoff update:
@@ -275,7 +307,8 @@ port of its authentication logic.
 
 ## Repository files for follow-up work
 
-- `src/Utils/PackagedApplication.cs`: native package lookup, COM bootstrap, pipe, environment block,
+- `src/Utils/PackagePipe.cs`: managed asynchronous pipe transport and protocol encoding.
+- `src/Utils/PackagedApplication.cs`: native package lookup, COM bootstrap, environment block,
   suspended creation, resume, and target monitoring; no existing-executable filter.
 - `src/Program.cs`: `APP_NAME` configuration and launch routing.
 - `src/Dispatcher.csproj` and `build`: source inclusion.

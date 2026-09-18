@@ -1,3 +1,11 @@
+# Unreleased
+
+* Put binaries, examples and test/MSBuild artifacts under `output/`; update signing and release uploads accordingly.
+* Require .NET Framework 4.8 or later; remove the .NET Framework 2.0/3.5 dependency.
+* Rewrite package IPC using managed named pipes and async/await, retaining the existing launch protocol, environment transfer, PID checks and suspended-start handshake.
+* Prefer .NET Framework 4.8 reference assemblies, falling back to installed runtime DLLs when the Developer Pack is absent.
+* Update Windows CI and rebuild the bundled autolock example for .NET Framework 4.8.
+
 # v2.2.5
 * Add a 10s watchdog in UWF_SERVICING_DETECT
 
