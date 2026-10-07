@@ -97,10 +97,10 @@ if [[ ! -z "$dobuild" ]] ; then
   mkdir -p "$output_dir"
 
   args=(/nologo /noconfig /nostdlib+ /filealign:512 /utf8output)
-  for assembly in mscorlib System System.Core System.Xml System.ServiceProcess System.Management; do
+  for assembly in mscorlib System System.Core System.Xml System.ServiceProcess System.Management System.Web.Extensions; do
     args+=("/reference:$framework\\$assembly.dll")
   done
-  files=(src\\Utils\\Job.cs src\\Utils\\Kernel32.cs src\\Utils\\PackagedApplication.cs src\\Utils\\PackagePipe.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs src\\Utils\\UWFManagement.cs)
+  files=(src\\Utils\\Job.cs src\\Utils\\EnvironmentProvider.cs src\\Utils\\Kernel32.cs src\\Utils\\PackagedApplication.cs src\\Utils\\PackagePipe.cs src\\Program.cs src\\Properties\\AssemblyInfo.cs src\\Utils\\ProcessExtensions.cs src\\Utils\\ParentProcessUtilities.cs src\\Utils\\UWFManagement.cs)
 
   MSYS2_ARG_CONV_EXCL='*' "$compiler" "${args[@]}" /platform:x86 /define:DISPACHER_WIN /target:winexe /out:$out_win_x86 "${files[@]}"
   MSYS2_ARG_CONV_EXCL='*' "$compiler" "${args[@]}" /platform:x86                       /target:exe    /out:$out_cmd_x86 "${files[@]}"

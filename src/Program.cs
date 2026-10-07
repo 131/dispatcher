@@ -80,7 +80,8 @@ namespace Dispatcher {
             Kernel32.SetConsoleCtrlHandler(new Kernel32.HandlerRoutine(ConsoleCtrlCheck), true);
 
             envs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            envs["Path"] = Environment.GetEnvironmentVariable("PATH");
+            foreach (System.Collections.DictionaryEntry item in Environment.GetEnvironmentVariables())
+                envs[(string)item.Key] = (string)item.Value;
 
             if (!ExtractCommandLine())
                 Environment.Exit(1);
@@ -387,13 +388,19 @@ namespace Dispatcher {
             List<string> keys = new List<string>(config.Keys);
             keys.Sort();
 
+            if (config.ContainsKey("ENV_PROVIDER")) {
+                string provider = Environment.ExpandEnvironmentVariables(Replace(config["ENV_PROVIDER"], replaces));
+                foreach (KeyValuePair<string, string> item in EnvironmentProvider.Run(provider, 5000))
+                    envs[item.Key] = item.Value;
+            }
+
             foreach (string key in keys) {
                 string value = config[key];
                 value = Replace(value, replaces);
                 value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
                     args += EncodeParameterArgument(value) + " ";
-                if (key.StartsWith("ENV_"))
+                if (key.StartsWith("ENV_") && key != "ENV_PROVIDER")
                     envs[key.Remove(0, 4)] = value;
                 if (key == "PRESTART_CMD")
                     execPreCmd = value;

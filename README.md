@@ -47,6 +47,16 @@ application inherits the dispatcher's environment, including your overrides.
 Dispatcher waits for it to exit and returns its exit code; set `DETACHED=true`
 to launch without waiting.
 
+`ENV_PROVIDER` can run one command before either `PATH` or `APP_NAME` is launched.
+The command must exit within five seconds and write one JSON object of string
+values to stdout. Its variables are merged into the target environment, then
+explicit `ENV_*` settings override them. Provider values are never logged.
+
+```xml
+<add key="ENV_PROVIDER"
+     value="wsl.exe -e /usr/bin/env VAUTHRC=/root/.vauthrc vauth env --ir://json"/>
+```
+
 This mode supports the current Windows user only, not services or alternate-user
 launches. If the application reuses an existing instance, that instance keeps
 its original environment.

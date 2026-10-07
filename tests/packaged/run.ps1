@@ -13,8 +13,8 @@ if (!$framework) {
 if (!(Test-Path (Join-Path $framework 'mscorlib.dll'))) {
     throw "Cannot find .NET Framework assemblies in: $framework"
 }
-$references = @('mscorlib', 'System', 'System.Core', 'System.Xml', 'System.ServiceProcess', 'System.Management') | ForEach-Object { '/reference:' + (Join-Path $framework ($_ + '.dll')) }
-$sources = @('Program.cs', 'Properties\AssemblyInfo.cs', 'Utils\Job.cs', 'Utils\Kernel32.cs', 'Utils\PackagedApplication.cs', 'Utils\PackagePipe.cs', 'Utils\ProcessExtensions.cs', 'Utils\ParentProcessUtilities.cs', 'Utils\UWFManagement.cs') | ForEach-Object { Join-Path "$root\src" $_ }
+$references = @('mscorlib', 'System', 'System.Core', 'System.Xml', 'System.ServiceProcess', 'System.Management', 'System.Web.Extensions') | ForEach-Object { '/reference:' + (Join-Path $framework ($_ + '.dll')) }
+$sources = @('Program.cs', 'Properties\AssemblyInfo.cs', 'Utils\Job.cs', 'Utils\EnvironmentProvider.cs', 'Utils\Kernel32.cs', 'Utils\PackagedApplication.cs', 'Utils\PackagePipe.cs', 'Utils\ProcessExtensions.cs', 'Utils\ParentProcessUtilities.cs', 'Utils\UWFManagement.cs') | ForEach-Object { Join-Path "$root\src" $_ }
 function Compile([string[]]$CompilerArguments) {
     & $csc /nologo /noconfig /nostdlib+ @references @CompilerArguments
     if ($LASTEXITCODE -ne 0) { throw 'C# compilation failed.' }
@@ -31,6 +31,10 @@ foreach ($platform in @('x86', 'x64')) {
         if ($LASTEXITCODE -ne 0) { throw "Framework check failed for $platform/$kind." }
         Write-Output "PASS $platform/${kind}: CLR 4, .NET Framework 4.8 target"
     }
+    Compile (@('/target:exe', "/platform:$platform", ('/out:' + (Join-Path $directory 'environment-provider-fixture.exe')), (Join-Path $PSScriptRoot 'EnvironmentProviderFixture.cs')))
+    Compile (@('/target:exe', "/platform:$platform", '/main:EnvironmentProviderTests', ('/out:' + (Join-Path $directory 'environment-provider-tests.exe')), (Join-Path $PSScriptRoot 'EnvironmentProviderTests.cs')) + $sources)
+    & (Join-Path $directory 'environment-provider-tests.exe')
+    if ($LASTEXITCODE -ne 0) { throw "ENV_PROVIDER tests failed for $platform." }
     Compile (@('/target:exe', "/platform:$platform", ('/out:' + (Join-Path $directory 'probe.exe')), (Join-Path $PSScriptRoot 'Probe.cs')))
     Compile (@('/target:exe', "/platform:$platform", '/main:PipeTests', ('/out:' + (Join-Path $directory 'pipe-tests.exe')), (Join-Path $PSScriptRoot 'PipeTests.cs')) + $sources)
     & (Join-Path $directory 'pipe-tests.exe')

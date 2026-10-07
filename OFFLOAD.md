@@ -291,19 +291,25 @@ That extra protection was not needed in the Windows test. These findings apply
 to the tested version and environment, not necessarily every startup mode or
 future release.
 
-## Deferred: vauth
+## Environment provider / vauth
 
-References: `/dvp/node_modules/vvauth/index.js`, its README, and `/root/.vauthrc`.
-Do not copy secrets into the repository. Current lookup selects the first existing
-file among `VAUTHRC`, `<cwd>/.vauthrc`, and `<home>/.vauthrc`. Resolution includes
-YAML, `env` expansion, SSH/JWT authentication, profile/Vault/secrets, and `env.map`.
-The profile supplies `OPENAI_ENT_KEY`, among other values.
+`ENV_PROVIDER` is implemented for both `PATH` and `APP_NAME`. It accepts one
+Windows command line, runs it before target creation, and requires one JSON
+object whose keys and values are strings. The provider has a fixed five-second
+timeout and a 16 MiB output limit. A nonzero exit code, timeout, or invalid JSON
+stops the launch. Provider values are never logged.
 
-Future pipeline: inherited environment -> vauth resolution -> explicit `ENV_*`
-overrides -> the same final environment for `PATH` and `APP_NAME`. The lookup
-working directory and access to Linux files from Windows still need decisions.
-Initially reusing the vauth resolver would separate integration from a full C#
-port of its authentication logic.
+The merge order is inherited environment -> provider JSON -> explicit `ENV_*`
+overrides. This preserves deterministic local overrides. A deployed vvauth can
+be used without storing a Vault token in the launcher config:
+
+```xml
+<add key="ENV_PROVIDER"
+     value="wsl.exe -e /usr/bin/env VAUTHRC=/root/.vauthrc vauth env --ir://json"/>
+```
+
+`VAUTHRC` is explicit because a dispatcher started from Windows does not have the
+same Linux home or working directory lookup as an interactive WSL shell.
 
 ## Repository files for follow-up work
 
@@ -317,8 +323,8 @@ port of its authentication logic.
 - `README.md` and `examples/codex-app.exe.config`: public documentation and a
   generic example without real credentials. This file is the handoff record.
 
-The requested native C# conversion is complete. Vauth remains deferred until that
-work is resumed.
+The native C# conversion and `ENV_PROVIDER` integration are complete locally.
+The Foundry launcher now negotiates its environment at each launch.
 
 ## References
 
