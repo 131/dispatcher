@@ -299,17 +299,20 @@ object whose keys and values are strings. The provider has a fixed five-second
 timeout and a 16 MiB output limit. A nonzero exit code, timeout, or invalid JSON
 stops the launch. Provider values are never logged.
 
-The merge order is inherited environment -> provider JSON -> explicit `ENV_*`
-overrides. This preserves deterministic local overrides. A deployed vvauth can
-be used without storing a Vault token in the launcher config:
+The provider receives the inherited environment plus explicit `ENV_*` values.
+The final merge order is inherited environment -> provider JSON -> explicit
+`ENV_*` overrides. `ENV_PROVIDER_CWD` defaults to the current working directory and
+supports `%dwd%`. A deployed vvauth can be used without storing a Vault token in
+the launcher config:
 
 ```xml
-<add key="ENV_PROVIDER"
-     value="wsl.exe -e /usr/bin/env VAUTHRC=/root/.vauthrc vauth env --ir://json"/>
+<add key="ENV_PROVIDER" value="wsl.exe -e vauth env --ir://json"/>
+<add key="ENV_PROVIDER_CWD" value="%dwd%"/>
+<add key="ENV_VAUTHRC" value="chatgpt-foundry.vauthrc"/>
 ```
 
-`VAUTHRC` is explicit because a dispatcher started from Windows does not have the
-same Linux home or working directory lookup as an interactive WSL shell.
+Here `ENV_VAUTHRC` is visible to `wsl.exe`; WSL interop maps the relative value
+against `ENV_PROVIDER_CWD`, so vvauth resolves the file beside the launcher.
 
 ## Repository files for follow-up work
 

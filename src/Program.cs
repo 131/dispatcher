@@ -388,9 +388,22 @@ namespace Dispatcher {
             List<string> keys = new List<string>(config.Keys);
             keys.Sort();
 
+            Dictionary<string, string> explicitEnvs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string key in keys)
+                if (key.StartsWith("ENV_") && !key.StartsWith("ENV_PROVIDER")) {
+                    string value = Environment.ExpandEnvironmentVariables(Replace(config[key], replaces));
+                    explicitEnvs[key.Remove(0, 4)] = value;
+                    envs[key.Remove(0, 4)] = value;
+                }
+
             if (config.ContainsKey("ENV_PROVIDER")) {
                 string provider = Environment.ExpandEnvironmentVariables(Replace(config["ENV_PROVIDER"], replaces));
-                foreach (KeyValuePair<string, string> item in EnvironmentProvider.Run(provider, 5000))
+                string providerCwd = config.ContainsKey("ENV_PROVIDER_CWD")
+                    ? Environment.ExpandEnvironmentVariables(Replace(config["ENV_PROVIDER_CWD"], replaces))
+                    : Environment.CurrentDirectory;
+                foreach (KeyValuePair<string, string> item in EnvironmentProvider.Run(provider, providerCwd, envs, 5000))
+                    envs[item.Key] = item.Value;
+                foreach (KeyValuePair<string, string> item in explicitEnvs)
                     envs[item.Key] = item.Value;
             }
 
@@ -400,7 +413,7 @@ namespace Dispatcher {
                 value = Environment.ExpandEnvironmentVariables(value);
                 if (key.StartsWith("ARGV"))
                     args += EncodeParameterArgument(value) + " ";
-                if (key.StartsWith("ENV_") && key != "ENV_PROVIDER")
+                if (key.StartsWith("ENV_") && !key.StartsWith("ENV_PROVIDER"))
                     envs[key.Remove(0, 4)] = value;
                 if (key == "PRESTART_CMD")
                     execPreCmd = value;

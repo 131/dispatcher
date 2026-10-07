@@ -11,7 +11,7 @@ namespace Utils {
         const int DefaultTimeout = 5000;
         const int MaximumOutputChars = 16 * 1024 * 1024;
 
-        internal static Dictionary<string, string> Run(string commandLine, int timeout) {
+        internal static Dictionary<string, string> Run(string commandLine, string workingDirectory, IDictionary<string, string> environment, int timeout) {
             if (String.IsNullOrWhiteSpace(commandLine)) throw new ArgumentException("ENV_PROVIDER must contain a command line.");
             if (timeout <= 0) timeout = DefaultTimeout;
             string executable, arguments;
@@ -22,6 +22,10 @@ namespace Utils {
             start.CreateNoWindow = true;
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
+            if (!String.IsNullOrEmpty(workingDirectory)) start.WorkingDirectory = workingDirectory;
+            if (environment != null)
+                foreach (KeyValuePair<string, string> item in environment)
+                    start.EnvironmentVariables[item.Key] = item.Value;
 
             using (Process process = new Process()) {
                 process.StartInfo = start;

@@ -49,12 +49,15 @@ to launch without waiting.
 
 `ENV_PROVIDER` can run one command before either `PATH` or `APP_NAME` is launched.
 The command must exit within five seconds and write one JSON object of string
-values to stdout. Its variables are merged into the target environment, then
-explicit `ENV_*` settings override them. Provider values are never logged.
+values to stdout. `ENV_PROVIDER_CWD` selects its working directory and defaults
+to the current working directory. Explicit `ENV_*` values are visible to the
+provider and override its returned values for the target. Provider values are
+never logged.
 
 ```xml
-<add key="ENV_PROVIDER"
-     value="wsl.exe -e /usr/bin/env VAUTHRC=/root/.vauthrc vauth env --ir://json"/>
+<add key="ENV_PROVIDER" value="wsl.exe -e vauth env --ir://json"/>
+<add key="ENV_PROVIDER_CWD" value="%dwd%"/>
+<add key="ENV_VAUTHRC" value="chatgpt-foundry.vauthrc"/>
 ```
 
 This mode supports the current Windows user only, not services or alternate-user
