@@ -401,7 +401,14 @@ namespace Dispatcher {
                 string providerCwd = config.ContainsKey("ENV_PROVIDER_CWD")
                     ? Environment.ExpandEnvironmentVariables(Replace(config["ENV_PROVIDER_CWD"], replaces))
                     : Environment.CurrentDirectory;
-                foreach (KeyValuePair<string, string> item in EnvironmentProvider.Run(provider, providerCwd, envs, 5000))
+                int providerTimeout = 5000;
+                if (config.ContainsKey("ENV_PROVIDER_TIMEOUT")) {
+                    int seconds;
+                    if (!Int32.TryParse(config["ENV_PROVIDER_TIMEOUT"], out seconds) || seconds <= 0 || seconds > Int32.MaxValue / 1000)
+                        throw new ArgumentException("ENV_PROVIDER_TIMEOUT must be a positive number of seconds.");
+                    providerTimeout = seconds * 1000;
+                }
+                foreach (KeyValuePair<string, string> item in EnvironmentProvider.Run(provider, providerCwd, envs, providerTimeout))
                     envs[item.Key] = item.Value;
                 foreach (KeyValuePair<string, string> item in explicitEnvs)
                     envs[item.Key] = item.Value;

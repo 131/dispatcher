@@ -48,8 +48,9 @@ Dispatcher waits for it to exit and returns its exit code; set `DETACHED=true`
 to launch without waiting.
 
 `ENV_PROVIDER` can run one command before either `PATH` or `APP_NAME` is launched.
-The command must exit within five seconds and write one JSON object of string
-values to stdout. `ENV_PROVIDER_CWD` selects its working directory and defaults
+The command must write one JSON object of string values to stdout. The timeout
+is five seconds by default; `ENV_PROVIDER_TIMEOUT` sets it in seconds (for
+example, `60`). `ENV_PROVIDER_CWD` selects its working directory and defaults
 to the current working directory. Explicit `ENV_*` values are visible to the
 provider and override its returned values for the target. Provider values are
 never logged.

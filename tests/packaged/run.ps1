@@ -48,4 +48,5 @@ foreach ($platform in @('x86', 'x64')) {
     }
 }
 & (Join-Path $PSScriptRoot 'ConfigurationTests.ps1') -BuildDirectory $OutputDirectory
+& (Join-Path $PSScriptRoot 'EnvironmentProviderConfigurationTests.ps1') -BuildDirectory $OutputDirectory
 Write-Output "Builds and test results: $OutputDirectory"

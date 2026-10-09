@@ -8,6 +8,7 @@ class EnvironmentProviderFixture {
             if (Environment.GetEnvironmentVariable("PROVIDER_INPUT") != "input" || !Environment.CurrentDirectory.EndsWith("provider cwd")) return 9;
             Console.WriteLine("{\"ALPHA\":\"one\",\"mixed\":\"provider\"}"); return 0;
         }
+        if (mode == "slow") { Thread.Sleep(6000); Console.WriteLine("{\"PROVIDER_DELAYED\":\"ready\"}"); return 0; }
         if (mode == "invalid") { Console.WriteLine("nope"); return 0; }
         if (mode == "fail") return 7;
         if (mode == "wait") { Thread.Sleep(5000); return 0; }

@@ -295,8 +295,8 @@ future release.
 
 `ENV_PROVIDER` is implemented for both `PATH` and `APP_NAME`. It accepts one
 Windows command line, runs it before target creation, and requires one JSON
-object whose keys and values are strings. The provider has a fixed five-second
-timeout and a 16 MiB output limit. A nonzero exit code, timeout, or invalid JSON
+object whose keys and values are strings. The provider has a five-second default
+timeout, configurable in seconds through `ENV_PROVIDER_TIMEOUT` and a 16 MiB output limit. A nonzero exit code, timeout, or invalid JSON
 stops the launch. Provider values are never logged.
 
 The provider receives the inherited environment plus explicit `ENV_*` values.
