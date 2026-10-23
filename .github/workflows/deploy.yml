@@ -19,10 +19,13 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22.x'
-    - run: ./build --build --sign --test
+    - run: ./build --build --test
       env:
         MSYS2_ARG_CONV_EXCL: "*"
-        SIGNING_SERVER: ${{ secrets.SIGNING_SERVER }}
+    - uses: 131/gh-actions/sign-binaries@v1
+      with:
+        files: output/dispatcher_*.exe
+        signing-server: ${{ secrets.SIGNING_SERVER }}
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
