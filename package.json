@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "version": "sed -Ei -e \"s/(AssemblyVersion|AssemblyFileVersion)\\(.*?\\)/\\1(\\\"${npm_package_version}.0\\\")/\" src/Properties/AssemblyInfo.cs && git add -A src/Properties/AssemblyInfo.cs"
+    "version": "node scripts/version.js"
   },
   "author": "",
   "license": "ISC",

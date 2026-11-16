@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+mkdir -p output/release
+for kind in cmd win; do
+  for suffix in '' _x64; do
+    cp "output/dispatcher_${kind}${suffix}.exe" output/release/
+    cp "output/go/dispatcher_go_${kind}${suffix}.exe" output/release/
+  done
+done
+cp NOTES.md output/release/NOTES.md

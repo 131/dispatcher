@@ -1,7 +1,7 @@
 param([string]$PackageAppName, [string]$OutputDirectory = (Join-Path $PSScriptRoot ('..\..\output\tests\packaged\' + [Guid]::NewGuid().ToString('N'))))
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
-$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).ProviderPath
 $csc = Join-Path $env:SystemRoot 'Microsoft.NET\Framework\v4.0.30319\csc.exe'
 $framework = $env:NET48_REFERENCE_ASSEMBLIES
 if (!$framework) {
@@ -31,6 +31,9 @@ foreach ($platform in @('x86', 'x64')) {
         if ($LASTEXITCODE -ne 0) { throw "Framework check failed for $platform/$kind." }
         Write-Output "PASS $platform/${kind}: CLR 4, .NET Framework 4.8 target"
     }
+    Compile (@('/target:exe', "/platform:$platform", '/main:LegacyConfigurationTests', ('/out:' + (Join-Path $directory 'legacy-configuration-tests.exe')), (Join-Path $PSScriptRoot 'LegacyConfigurationTests.cs')) + $sources)
+    & (Join-Path $directory 'legacy-configuration-tests.exe')
+    if ($LASTEXITCODE -ne 0) { throw "Legacy configuration checks failed for $platform." }
     Compile (@('/target:exe', "/platform:$platform", ('/out:' + (Join-Path $directory 'environment-provider-fixture.exe')), (Join-Path $PSScriptRoot 'EnvironmentProviderFixture.cs')))
     Compile (@('/target:exe', "/platform:$platform", '/main:EnvironmentProviderTests', ('/out:' + (Join-Path $directory 'environment-provider-tests.exe')), (Join-Path $PSScriptRoot 'EnvironmentProviderTests.cs')) + $sources)
     & (Join-Path $directory 'environment-provider-tests.exe')

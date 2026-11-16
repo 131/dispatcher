@@ -1,10 +1,21 @@
-name: deploy
+name: release
 on:
   push:
     tags:
-      - '*'
+      - 'v4.*'
+permissions:
+  contents: write
 jobs:
+  linux-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+    - run: go vet ./... && go test -race ./...
   build:
+    needs: linux-tests
     runs-on: windows-2022
     environment: production
     defaults:
@@ -19,17 +30,29 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22.x'
-    - run: ./build --build --test
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+    - run: bash ./build --build --test && bash ./build-go
       env:
-        MSYS2_ARG_CONV_EXCL: "*"
+        MSYS2_ARG_CONV_EXCL: '*'
+    - name: Cross-language release tests (32/64 bit)
+      shell: pwsh
+      run: ./tests/release/run.ps1 -SkipBuild
+    - run: bash ./scripts/prepare-release
+    - name: Verify unsigned architecture, subsystem, C# version and size
+      shell: pwsh
+      run: ./tests/release/check-artifacts.ps1
     - uses: 131/gh-actions/sign-binaries@v1
       with:
-        files: output/dispatcher_*.exe
+        files: output/release/*.exe
         signing-server: ${{ secrets.SIGNING_SERVER }}
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./output/dispatcher_*.exe
-        file_glob: true
-        tag: ${{ github.ref }}
+    - name: Verify eight Authenticode signatures, timestamps, C# budget and checksums
+      shell: pwsh
+      run: ./tests/release/check-artifacts.ps1 -Signed
+    - name: Publish signed release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create "$GITHUB_REF_NAME" output/release/*.exe output/release/SHA256SUMS output/release/NOTES.md \
+          --verify-tag --target "$GITHUB_SHA" --title "Dispatcher $GITHUB_REF_NAME — C# + Go" --notes-file NOTES.md

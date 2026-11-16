@@ -448,7 +448,7 @@ namespace Dispatcher {
                       envs["DISPATCHED_SERVICE_MODE"] = "true";
 
                 } if (key == "SERVICE_RESTART_ON_NETWORK_CHANGE")
-                    restart_on_network_change = true;
+                    restart_on_network_change = toBool(value);
                 if (key == "AS_DESKTOP_USER") {
                     as_desktop_user = value == "auto" ? ProcessExtensions.isService() : toBool(value);
                 } if (key == "OUTPUT")
@@ -474,7 +474,11 @@ namespace Dispatcher {
         }
 
         public static bool toBool(string str) {
-          return !(String.IsNullOrEmpty(str) || str == "false" || str == "0");
+          if (String.IsNullOrEmpty(str) || str == "0" || String.Equals(str, "false", StringComparison.OrdinalIgnoreCase))
+              return false;
+          if (str == "1" || String.Equals(str, "true", StringComparison.OrdinalIgnoreCase))
+              return true;
+          throw new ArgumentException("Expected true, false, 1, 0 or empty for a boolean option.");
         }
         
 
@@ -515,19 +519,17 @@ namespace Dispatcher {
             files.Add(Path.Combine(dispatcher_dir, dispatcher_name + ".exe.config"));
 
             string dispatcher_conf = Path.Combine(dispatcher_dir, dispatcher_name + ".config.d");
-            if (Directory.Exists(dispatcher_conf))
-            {
-                string[] dirs = Directory.GetFiles(dispatcher_conf, "*.config");
-                foreach (string file in dirs)
-                    files.Add(Path.GetFullPath(file));
-            }
+            string[] dirs;
+            try { dirs = Directory.GetFiles(dispatcher_conf, "*.config"); }
+            catch (DirectoryNotFoundException) { dirs = new string[0]; }
+            Array.Sort(dirs, StringComparer.Ordinal);
+            foreach (string file in dirs)
+                files.Add(Path.GetFullPath(file));
 
             foreach (string config_file in files)
             {
                 try
                 {
-                    if (!File.Exists(config_file))
-                        continue;
                     XmlDocument doc = new XmlDocument();
                     doc.Load(config_file);
                     XmlNodeList nodeList;
@@ -537,7 +539,11 @@ namespace Dispatcher {
                     foreach (XmlNode addd in nodeList)
                         config[addd.Attributes["key"].Value] = addd.Attributes["value"].Value;
                 }
-                catch { }
+                catch (FileNotFoundException) { }
+                catch (DirectoryNotFoundException) { }
+                catch (Exception error) {
+                    throw new InvalidOperationException("Cannot read configuration " + Path.GetFileName(config_file) + ".", error);
+                }
             }
 
 

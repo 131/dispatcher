@@ -21,3 +21,23 @@ jobs:
         MSYS2_ARG_CONV_EXCL: "*"
     - run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tests/packaged/run.ps1
 
+  go:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+    - run: go vet ./...
+    - run: go test -race ./...
+      if: runner.os == 'Linux'
+    - run: bash ./build-go
+      if: runner.os == 'Windows'
+    - name: Test Windows and all renamed Go artifacts
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        ./tests/release/run.ps1
