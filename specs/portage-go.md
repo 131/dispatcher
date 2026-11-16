@@ -15,11 +15,11 @@ mémoire est confirmé et publié. État/build/tests : [GO.md](../GO.md).
   autorisation de supprimer des fonctionnalités courantes.
 - Contrat .NET : **comme maintenant, EXE C# utilisant .NET Framework 4.8
   installé, sans runtime embarqué**, pour limiter la taille du binaire.
-  **Cible de taille
-  C# uniquement : < 100 Ko par exécutable distribué**, soit < 100 000 octets,
-  signature incluse si le livrable est signé. fleurent indique que les releases
-  actuelles font environ 80 Ko ; cette référence est déclarée, non mesurée ici.
-  Runtime et taille sont acquis, pas des arbitrages ouverts.
+  **Guideline de développement C# : garder un petit EXE portable sous Windows,
+  dépendant du runtime installé, autour de < 100 Ko comme référence**.
+  Ce n'est ni un seuil strict ni un test de release/CI. fleurent indique que les
+  releases actuelles font environ 80 Ko ; cette référence est déclarée, non
+  mesurée ici. Ne pas embarquer le runtime pour gagner en autonomie.
 - Contrat Go : exécutable autonome, configuration XML **et** YAML dans des
   fichiers portant uniquement l’extension **`.config`** : marqueur `<?` = XML,
   sinon YAML. Aucun `.yaml`/`.yml`, aucun fragment YAML, aucun champ de version
@@ -119,9 +119,9 @@ construire un framework partagé ni faire dépendre Go du CLR.
   machine ou de droits = validation en attente, pas suppression de fonctionnalité.
 - Tester `APP_NAME` avec un vrai package installé ; les tests de transport avec
   bootstrap de substitution ne prouvent pas à eux seuls la compatibilité COM.
-- Mesurer les tailles C# avant/après, vérifier la cible < 100 Ko par EXE
-  distribué et rapporter les tailles non signées et signées. Aucun budget de
-  taille équivalent pour Go. Pas de taille affirmée sans mesure.
+- Garder le C# petit et runtime-dépendant conformément à la guideline de
+  développement ; aucun test bloquant de taille. Les tailles peuvent être
+  rapportées à titre informatif. Aucune guideline de taille équivalente pour Go.
 
 ## Séquence de travail proposée
 

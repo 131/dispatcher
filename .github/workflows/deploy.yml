@@ -40,14 +40,14 @@ jobs:
       shell: pwsh
       run: ./tests/release/run.ps1 -SkipBuild
     - run: bash ./scripts/prepare-release
-    - name: Verify unsigned architecture, subsystem, C# version and size
+    - name: Verify unsigned architecture, subsystem and C# version
       shell: pwsh
       run: ./tests/release/check-artifacts.ps1
     - uses: 131/gh-actions/sign-binaries@v1
       with:
         files: output/release/*.exe
         signing-server: ${{ secrets.SIGNING_SERVER }}
-    - name: Verify eight Authenticode signatures, timestamps, C# budget and checksums
+    - name: Verify eight Authenticode signatures, timestamps and checksums
       shell: pwsh
       run: ./tests/release/check-artifacts.ps1 -Signed
     - name: Publish signed release

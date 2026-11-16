@@ -22,7 +22,6 @@ foreach ($name in ($expected.Keys | Sort-Object)) {
     $subsystem = [BitConverter]::ToUInt16($bytes, $pe + 24 + 68)
     if ($machine -ne $expected[$name][0] -or $subsystem -ne $expected[$name][1]) { throw "Wrong architecture/subsystem: $name" }
     if (!$name.StartsWith('dispatcher_go_')) {
-        if ($bytes.Length -ge 100000) { throw "C# release exceeds 100 kB: $name" }
         if ([Diagnostics.FileVersionInfo]::GetVersionInfo($file).FileMajorPart -ne 4) { throw "Wrong C# release version: $name" }
     }
     if ($Signed) {

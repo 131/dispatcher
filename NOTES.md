@@ -1,7 +1,8 @@
 # Dispatcher v4.0.0 — C# + Go
 
 Huit EXE Windows signés : console/GUI × x86/x64, C# et Go côte à côte.
-C# conserve .NET Framework 4.8 installé et un EXE < 100 Ko ; Go est autonome.
+C# reste petit, portable sous Windows et dépendant de .NET Framework 4.8 installé ;
+Go est autonome. La taille C# (~100 Ko visés) est une guideline, pas un test.
 
 - Go : XML ou YAML dans `.config` uniquement, vauthrc inline via `vvauth`, et
   `APP_NAME` natif avec ENV/ARGV/CWD, OUTPUT, attente ou détachement.

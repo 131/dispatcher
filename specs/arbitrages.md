@@ -11,11 +11,11 @@ Contraintes acquises : [contrat du portage](portage-go.md).
 Ce point ne nécessite plus d'arbitrage. Référence existante :
 [build](../build), [projet](../src/Dispatcher.csproj).
 
-**Taille acquise :** cible **< 100 Ko par EXE C# distribué** (< 100 000 octets,
-signature incluse pour les releases signées), C# uniquement. fleurent indique
-une référence actuelle d'environ 80 Ko ; aucune mesure de release n'a été
-exécutée ici. Rapporter les tailles avant/après et signaler tout dépassement
-avant de dégrader la compatibilité. Aucun budget similaire pour Go.
+**Guideline confirmée par fleurent :** garder le C# petit, portable sous Windows
+et dépendant du runtime installé, avec < 100 Ko comme référence indicative
+(releases actuelles ~80 Ko selon fleurent). **Pas de seuil strict ni de test de
+taille** en CI/release. Les tailles peuvent être rapportées à titre informatif.
+Pas de contrainte de taille équivalente pour Go.
 
 ## 2. Nettoyage des comportements historiques — acquis
 
