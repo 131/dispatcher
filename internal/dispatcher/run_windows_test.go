@@ -199,7 +199,7 @@ func TestWindowsCreateFailure(t *testing.T) {
 func TestWindowsRenamedBinariesXMLYAMLAndCLI(t *testing.T) {
 	directory := os.Getenv("DISPATCHER_GO_TEST_OUTPUT")
 	if directory == "" {
-		t.Skip("binary smoke requires build-go output")
+		t.Skip("binary smoke requires ./build --build output")
 	}
 	for _, name := range []string{"dispatcher_go_cmd.exe", "dispatcher_go_cmd_x64.exe", "dispatcher_go_win.exe", "dispatcher_go_win_x64.exe"} {
 		for _, format := range []string{"xml", "yaml"} {

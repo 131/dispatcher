@@ -282,7 +282,7 @@ func TestRealPackageContextCOMBootstrap(t *testing.T) {
 func TestRealPackageContextProductionHelpers(t *testing.T) {
 	appName, directory := os.Getenv("DISPATCHER_GO_TEST_APP_NAME"), os.Getenv("DISPATCHER_GO_TEST_OUTPUT")
 	if appName == "" || directory == "" {
-		t.Skip("requires installed package context and build-go output; runs only our probe")
+		t.Skip("requires installed package context and ./build --build output; runs only our probe")
 	}
 	for _, name := range []string{"dispatcher_go_cmd.exe", "dispatcher_go_cmd_x64.exe", "dispatcher_go_win.exe", "dispatcher_go_win_x64.exe"} {
 		t.Run(name, func(t *testing.T) {

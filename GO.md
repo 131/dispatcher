@@ -32,13 +32,13 @@ au contrat final. Linux/macOS ne sont pas des cibles d'exécution.
 
 Le C# implémente également les corrections validées : booléens explicites,
 restart réseau lisant sa valeur, fragments triés et erreurs de lecture/XML
-remontées. Sa version de livraison n'a pas été changée et aucune release
-dispatcher n'a été publiée.
+remontées. La branche v4 livre les deux implémentations et décrit ses limites dans
+[NOTES.md](NOTES.md).
 
 ## Build
 
 ```bash
-./build-go
+./build --build
 ```
 
 | Artefact | Architecture |
@@ -48,8 +48,8 @@ dispatcher n'a été publiée.
 | `output/go/dispatcher_go_win.exe` | x86 / 32 bits |
 | `output/go/dispatcher_go_win_x64.exe` | x64 |
 
-`output/go/` sépare ces artefacts des quatre C# dans `output/`. Le script C#
-`./build --build` et le workflow de release existant restent distincts. Les
+`output/go/` sépare ces artefacts des quatre C# dans `output/`. Le script unique `./build --build` produit les deux implémentations ;
+`./build --build --test` exécute les suites C# et Go. Les
 binaires Go locaux ne sont pas signés et ne constituent pas une release finale.
 
 ## Tests
@@ -68,7 +68,7 @@ helpers de production sont testés localement sur un probe, sans démarrer
 l’application utilisateur ; ils restent opt-in en CI via
 `DISPATCHER_GO_TEST_APP_NAME`.
 
-Sous Windows, après `./build-go`, les smoke tests des quatre artefacts renommés
+Sous Windows, après `./build --build`, les smoke tests des quatre artefacts renommés
 s'activent via `DISPATCHER_GO_TEST_OUTPUT` :
 
 ```powershell

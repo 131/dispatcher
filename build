@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu
+cd "$(dirname "$0")"
 
 output_dir=output
 out_win_x86=$output_dir/dispatcher_win.exe
@@ -110,6 +111,19 @@ if [[ ! -z "$dobuild" ]] ; then
   mkdir -p "$output_dir/examples"
   cp "$out_win_x64" "$output_dir/examples/autolock.exe"
   cp examples/autolock.exe.config "$output_dir/examples/autolock.exe.config"
+
+  # Go uses the same build entry point; no CLR or C toolchain is required.
+  mkdir -p output/go
+  for arch in 386 amd64; do
+    suffix=""
+    if [[ "$arch" == amd64 ]]; then suffix="_x64"; fi
+    for kind in cmd win; do
+      flags='-s -w'
+      if [[ "$kind" == win ]]; then flags="$flags -H windowsgui -X main.gui=true"; fi
+      GOOS=windows GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags "$flags" \
+        -o "output/go/dispatcher_go_${kind}${suffix}.exe" ./cmd/dispatcher-go
+    done
+  done
 fi
 
 if [[ ! -z "$dosign" ]] ; then
@@ -128,6 +142,11 @@ if [[ ! -z "$dosign" ]] ; then
   sign $out_cmd_x86
   sign $out_win_x64
   sign $out_cmd_x64
+  for kind in cmd win; do
+    for suffix in '' _x64; do
+      sign "$output_dir/go/dispatcher_go_${kind}${suffix}.exe"
+    done
+  done
 fi
 
 
@@ -136,4 +155,5 @@ if [[ ! -z "$dotest" ]] ; then
 
   cmd.exe /c npm install
   cmd.exe /c npm test
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tests/release/run.ps1 -SkipBuild
 fi

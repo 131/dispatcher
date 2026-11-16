@@ -9,8 +9,6 @@ try {
     if (!$SkipBuild) {
         & bash ./build --build
         if ($LASTEXITCODE -ne 0) { throw 'C# build failed.' }
-        & bash ./build-go
-        if ($LASTEXITCODE -ne 0) { throw 'Go build failed.' }
     }
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tests/packaged/run.ps1
     if ($LASTEXITCODE -ne 0) { throw 'C# packaged tests failed.' }

@@ -9,7 +9,8 @@ if(!/^\d+\.\d+\.\d+$/.test(version || ''))
   throw new Error('ppackage must supply npm_package_version');
 const major = Number(version.split('.')[0]);
 const modulePath = 'github.com/131/dispatcher' + (major >= 2 ? `/v${major}` : '');
-const files = ['src/Properties/AssemblyInfo.cs'];
+const files = ['src/Properties/AssemblyInfo.cs', 'NOTES.md'];
+fs.writeFileSync('NOTES.md', fs.readFileSync('NOTES.md', 'utf8').replace(/^# Dispatcher v[^ ]+/, `# Dispatcher v${version}`));
 const assembly = fs.readFileSync(files[0], 'utf8').replace(
   /(AssemblyVersion|AssemblyFileVersion)\("[^"]*"\)/g,
   `$1("${version}.0")`

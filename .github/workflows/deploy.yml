@@ -33,12 +33,9 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
-    - run: bash ./build --build --test && bash ./build-go
+    - run: bash ./build --build --test
       env:
         MSYS2_ARG_CONV_EXCL: '*'
-    - name: Cross-language release tests (32/64 bit)
-      shell: pwsh
-      run: ./tests/release/run.ps1 -SkipBuild
     - run: bash ./scripts/prepare-release
     - name: Verify unsigned architecture, subsystem and C# version
       shell: pwsh
