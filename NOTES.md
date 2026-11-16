@@ -1,4 +1,4 @@
-# Dispatcher v4.0.0 — C# + Go
+# Dispatcher v4.0.1 — C# + Go
 
 Huit EXE Windows signés : console/GUI × x86/x64, C# et Go côte à côte.
 C# reste petit, portable sous Windows et dépendant de .NET Framework 4.8 installé ;
