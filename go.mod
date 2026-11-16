@@ -1,4 +1,6 @@
-module github.com/131/dispatcher
+module github.com/131/dispatcher/v4
+
+// version: 4.0.0
 
 go 1.22
 

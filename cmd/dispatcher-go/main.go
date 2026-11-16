@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"strconv"
 
-	"github.com/131/dispatcher/internal/dispatcher"
+	"github.com/131/dispatcher/v4/internal/dispatcher"
 )
 
 var gui = "false"
