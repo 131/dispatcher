@@ -34,7 +34,7 @@ try {
         $test = Join-Path $work "dispatcher-tests-$arch.exe"
         & go test -c -ldflags '-s -w' -o $test ./internal/dispatcher
         if ($LASTEXITCODE -ne 0) { throw "Go test build failed: $arch" }
-        & $test -test.v
+        & $test '-test.v'
         if ($LASTEXITCODE -ne 0) { throw "Go tests failed: $arch" }
     }
 } finally {
